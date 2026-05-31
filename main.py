@@ -19,7 +19,7 @@ def main():
     y = pd.Series(data.target).map(target_names)
     test_class=Classification()
 
-    test_class.load(X,y)
+    test_class.set(X, y)
 
 if __name__ == '__main__':
     main()

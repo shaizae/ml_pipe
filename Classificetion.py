@@ -12,7 +12,8 @@ class Classification:
         self.targets: Target = None
         self.models: list[BaseEstimator] = None
 
-    def load(self, fetchers: DataFrame, target: np.ndarray| Series):
+
+    def set(self, fetchers: DataFrame, target: np.ndarray | Series,models: list[BaseEstimator]):
         if isinstance(target, Series):
             target = target.to_numpy(copy=True)
 
@@ -21,3 +22,5 @@ class Classification:
 
         self.targets = Target()
         self.targets.load_new_data(target)
+
+        self.models = models
