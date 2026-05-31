@@ -1,3 +1,4 @@
+import numpy as np
 from pandas import DataFrame, Series
 from sklearn.base import BaseEstimator
 
@@ -11,8 +12,12 @@ class Classification:
         self.targets: Target = None
         self.models: list[BaseEstimator] = None
 
-    def load(self, fetchers: DataFrame, target: Series):
+    def load(self, fetchers: DataFrame, target: np.ndarray| Series):
+        if isinstance(target, Series):
+            target = target.to_numpy(copy=True)
+
         self.fetchers = Fetchers()
-        self.targets = Target()
         self.fetchers.load_new_data(fetchers)
+
+        self.targets = Target()
         self.targets.load_new_data(target)
