@@ -26,7 +26,7 @@ def main():
     test_class = Classification()
 
     test_class.set(X, y, [RandomForestClassifier(), AdaBoostClassifier(), DecisionTreeClassifier(),SVC()])
-    res=test_class.train_test_split(0.6)
+    res=test_class.k_folds(5)
     for i in res:
         i.plot_confusion_matrix()
         i.plot_roc_curve()

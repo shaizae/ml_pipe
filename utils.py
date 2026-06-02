@@ -1,5 +1,6 @@
+from copy import deepcopy
 from dataclasses import dataclass
-from multiprocessing import shared_memory,Lock
+from multiprocessing import shared_memory
 from typing import Tuple, Any
 
 import numpy as np
@@ -42,9 +43,31 @@ def create_shared_numpy(arr: np.ndarray, name: str) -> SharedMemory:
 @dataclass(slots=True)
 class TrainData:
     model: Any
-    features: SharedMemory
-    target: SharedMemory
+    features: SharedMemory = None
+    target: SharedMemory = None
+    print: bool = False
+    train_index: list[int] = None
+    test_index: list[int] = None
 
     @property
     def name(self):
         return self.model.__class__.__name__
+
+    def copy(self):
+        return deepcopy(self)
+
+    def set_features_and_targets(self, features: SharedMemory, target: SharedMemory):
+        self.features = features
+        self.target = target
+
+
+    def set_indexes(self, train_index: list[int], test_index: list[int]):
+        self.train_index = train_index
+        self.test_index = test_index
+
+
+
+    @property
+    def have_indexes(self):
+        return self.features_index is not None and self.targets_index is not None
+
