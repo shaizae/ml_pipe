@@ -29,6 +29,7 @@ def main():
     res=test_class.train_test_split(0.6)
     for i in res:
         i.plot_confusion_matrix()
+        i.plot_roc_curve()
 
 
 if __name__ == '__main__':

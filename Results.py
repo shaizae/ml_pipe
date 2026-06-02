@@ -38,7 +38,8 @@ class Results:
         For multiclass, you’d need binarization (handled below).
         """
         if not hasattr(self.model, "predict_proba"):
-            raise ValueError("Model must support predict_proba for ROC curve")
+            print(f"model {self.name} must support predict_proba for ROC curve")
+            return
 
         y_score = self.model.predict_proba(self.features_test)
 
@@ -46,7 +47,7 @@ class Results:
 
         # Binary case
         if len(classes) == 2:
-            fpr, tpr, _ = roc_curve(y_test, y_score[:, 1])
+            fpr, tpr, _ = roc_curve(self.target_test, y_score[:, 1])
             roc_auc = auc(fpr, tpr)
 
             plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
@@ -58,8 +59,7 @@ class Results:
             plt.show()
             return
 
-        # Multiclass (One-vs-Rest)
-        y_test_bin = label_binarize(y_test, classes=classes)
+        y_test_bin = label_binarize(self.target_test, classes=classes)
 
         plt.figure()
 
