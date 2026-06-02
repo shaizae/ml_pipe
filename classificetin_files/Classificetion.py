@@ -72,7 +72,8 @@ class Classification:
             train_data.set_indexes(train_index, test_index)
 
         with Pool(processes=self._process_limit) as pool:
-            results = pool.map(train, self._train_data)
+            runner = pool.map_async(train, self._train_data)
+            results = runner.get()
 
         features.unlink()
         targe.unlink()
@@ -104,7 +105,8 @@ class Classification:
                 train_inputs.append(train_input)
 
             with Pool(processes=self._process_limit) as pool:
-                model_results = pool.map(train, train_inputs)
+                runner = pool.map_async(train, train_inputs)
+                model_results=runner.get()
 
             final_result = Results(train_data.model)
             for result in tqdm(model_results):
