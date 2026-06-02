@@ -64,10 +64,6 @@ class TrainData:
         self.train_index = train_index
         self.test_index = test_index
 
-    @property
-    def have_indexes(self):
-        return self.features_index is not None and self.targets_index is not None
-
     def __call__(self, train_features:np.ndarray, train_target:np.ndarray):
         self.model.fit(train_features, train_target)
         return self.model
