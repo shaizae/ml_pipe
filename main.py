@@ -1,8 +1,14 @@
 import pandas as pd
-from sklearn.datasets import  fetch_covtype
+from sklearn.datasets import load_iris as DB
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+
 from Classificetion import Classification
+
+
 def main():
-    data = fetch_covtype()
+    data = DB()
     feature_names = data.feature_names
 
     # Create DataFrame for features
@@ -17,11 +23,14 @@ def main():
         7: "Krummholz"
     }
     y = pd.Series(data.target).map(target_names)
-    test_class=Classification()
+    test_class = Classification()
 
-    test_class.set(X, y)
+    test_class.set(X, y, [RandomForestClassifier(), AdaBoostClassifier(), DecisionTreeClassifier(),SVC()])
+    res=test_class.k_folds(5)
+    for i in res:
+        i.plot_confusion_matrix()
+        i.plot_roc_curve()
+
 
 if __name__ == '__main__':
     main()
-
-
