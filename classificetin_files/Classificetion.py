@@ -124,5 +124,9 @@ class Classification:
     def leave_one_out(self):
         return self.k_folds(n_splits=len(self.targets.data))
 
-    def fetcher_selection(self,):
-        pass
+    def fetcher_selection(self, algorithm):
+        bar=tqdm(self._train_data)
+
+        for model in bar:
+            bar.set_description(f"model {model.name}")
+
