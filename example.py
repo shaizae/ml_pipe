@@ -26,7 +26,7 @@ def main():
     test_class = Classification()
 
     test_class.set(X, y, [RandomForestClassifier(), AdaBoostClassifier(), DecisionTreeClassifier(),SVC()])
-    res=test_class.laevo_one_out()
+    res=test_class.leave_one_out()
     for i in res:
         i.plot_confusion_matrix()
         i.plot_roc_curve()

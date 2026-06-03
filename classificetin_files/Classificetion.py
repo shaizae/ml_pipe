@@ -14,18 +14,22 @@ from utils.utils import create_shared_numpy, TrainData
 
 
 def train(train_data: TrainData):
-    print(f"train start whit model: {train_data.name}") if train_data.print else None
+    if train_data.print:
+        print(f"train start whit model: {train_data.name}")
     features = train_data.features.array
     target = train_data.target.array
     train_features = features[train_data.train_index, ...]
     train_target = target[train_data.train_index]
     train_data(train_features, train_target)
-    print(f"train end whit model: {train_data.name}") if train_data.print else None
+    if train_data.print:
+        print(f"train end whit model: {train_data.name}")
     result = Results(train_data.model)
     test_features = features[train_data.test_index, ...]
     test_target = target[train_data.test_index]
     result.set_test(test_features, test_target)
     result.predict()
+    if train_data.print:
+        print(f"predicting results end whit model: {train_data.name}")
     return result
 
 
@@ -106,7 +110,7 @@ class Classification:
 
             with Pool(processes=self._process_limit) as pool:
                 runner = pool.map_async(train, train_inputs)
-                model_results=runner.get()
+                model_results = runner.get()
 
             final_result = Results(train_data.model)
             for result in tqdm(model_results):
@@ -116,5 +120,9 @@ class Classification:
         X_train.unlink()
         y_train.unlink()
         return results
-    def laevo_one_out(self):
+
+    def leave_one_out(self):
         return self.k_folds(n_splits=len(self.targets.data))
+
+    def fetcher_selection(self,):
+        pass
