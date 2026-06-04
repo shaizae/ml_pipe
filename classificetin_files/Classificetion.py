@@ -4,33 +4,15 @@ from multiprocessing.pool import Pool
 import numpy as np
 from pandas import DataFrame, Series
 from sklearn.base import BaseEstimator
+from sklearn.feature_selection import SelectFromModel
 from sklearn.model_selection import train_test_split, KFold
 from tqdm import tqdm
 
 from utils.Fetchers import Fetchers
 from utils.Results import Results
 from utils.Target import Target
+from utils.utils.ultyprosses_functions import train
 from utils.utils import create_shared_numpy, TrainData
-
-
-def train(train_data: TrainData):
-    if train_data.print:
-        print(f"train start whit model: {train_data.name}")
-    features = train_data.features.array
-    target = train_data.target.array
-    train_features = features[train_data.train_index, ...]
-    train_target = target[train_data.train_index]
-    train_data(train_features, train_target)
-    if train_data.print:
-        print(f"train end whit model: {train_data.name}")
-    result = Results(train_data.model)
-    test_features = features[train_data.test_index, ...]
-    test_target = target[train_data.test_index]
-    result.set_test(test_features, test_target)
-    result.predict()
-    if train_data.print:
-        print(f"predicting results end whit model: {train_data.name}")
-    return result
 
 
 class Classification:
@@ -124,9 +106,20 @@ class Classification:
     def leave_one_out(self):
         return self.k_folds(n_splits=len(self.targets.data))
 
-    def fetcher_selection(self, algorithm):
+    def fetcher_selection(self, algorithms: list[SelectFromModel],number_of_fetures: int):
+        train_index, _ = train_test_split(
+            np.arange(len(self.fetchers.data)), test_size=0.1)
+
+        fetchers=create_shared_numpy(self.fetchers.pop_index(train_index),"fetchers")
+        target=create_shared_numpy(self.targets.pop_index(train_index),"target")
+        models=[]
+        for algorithm in algorithms:
+            algo=algorithm.fit(fetchers=fetchers, target=target, n_features=number_of_fetures)
+            models.append(algo)
+
         bar=tqdm(self._train_data)
 
         for model in bar:
             bar.set_description(f"model {model.name}")
+
 

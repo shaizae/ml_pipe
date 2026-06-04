@@ -4,7 +4,7 @@ from multiprocessing import shared_memory
 from typing import Tuple, Any
 
 import numpy as np
-
+from sklearn.feature_selection import SelectFromModel
 
 class SharedMemory:
     def __init__(self, memory: shared_memory.SharedMemory, shape: Tuple[Any, ...], dtype: np.dtype):
@@ -48,6 +48,7 @@ class TrainData:
     print: bool = False
     train_index: list[int] = None
     test_index: list[int] = None
+    featuresIndex:np.ndarray = None
 
     @property
     def name(self):
@@ -67,3 +68,10 @@ class TrainData:
     def __call__(self, train_features:np.ndarray, train_target:np.ndarray):
         self.model.fit(train_features, train_target)
         return self.model
+
+
+@dataclass(slots=True)
+class FeaturesSelectionsData:
+    algorithm : SelectFromModel
+    features :SharedMemory
+    target :SharedMemory

@@ -20,12 +20,17 @@ class Target:
         self._data = encoded
         self.decrypt_map = mapping
 
+    def pop_index(self,index: list[int]):
+        val=self._data[index]
+        np.delete(self._data,index)
+        return val
+
     @property
     def data(self):
         return self._data
 
     @property
-    def show_origial_data(self):
+    def show_original_data(self):
         if self._data is None:
             return None
 

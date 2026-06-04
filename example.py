@@ -4,6 +4,8 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 
+from sklearn.feature_selection import RFE,VarianceThreshold
+
 from classificetin_files.Classificetion import Classification
 
 
@@ -24,6 +26,8 @@ def main():
     }
     y = pd.Series(data.target).map(target_names)
     test_class = Classification()
+
+    test_class.fetcher_selection([SelectFromModel,chi2,r_regression],50)
 
     test_class.set(X, y, [RandomForestClassifier(), AdaBoostClassifier(), DecisionTreeClassifier(),SVC()])
     res=test_class.leave_one_out()
