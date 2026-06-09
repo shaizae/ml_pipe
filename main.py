@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 
-from Classificetion import Classification
+from classificetin_files.Classificetion import Classification
 
 
 def main():
