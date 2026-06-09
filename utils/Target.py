@@ -20,9 +20,9 @@ class Target:
         self._data = encoded
         self.decrypt_map = mapping
 
-    def pop_index(self,index: list[int]):
-        val=self._data[index]
-        np.delete(self._data,index)
+    def pop_index(self, index: list[int]):
+        val = self._data[index]
+        self._data = np.delete(self._data, index)
         return val
 
     @property

@@ -25,7 +25,7 @@ def main():
     }
     y = pd.Series(data.target).map(target_names)
     test_class = Classification()
-    test_class.process_limit(1)
+    test_class.process_limit(2)
 
     test_class.set(X, y, [RandomForestClassifier(), AdaBoostClassifier(), DecisionTreeClassifier(), SVC()])
     test_class.fetcher_selection(chi2,list(range(5,30,5)))
