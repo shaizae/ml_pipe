@@ -4,15 +4,14 @@ from multiprocessing.pool import Pool
 import numpy as np
 from pandas import DataFrame, Series
 from sklearn.base import BaseEstimator
-from sklearn.feature_selection import SelectFromModel
 from sklearn.model_selection import train_test_split, KFold
 from tqdm import tqdm
 
 from utils.Fetchers import Fetchers
 from utils.Results import Results
 from utils.Target import Target
-from utils.utils.ultyprosses_functions import train
-from utils.utils import create_shared_numpy, TrainData
+from utils.ultyprosses_functions import train, features_selections
+from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData
 
 
 class Classification:

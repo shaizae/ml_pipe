@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.feature_selection import SelectKBest
 
-from Results import Results
+from utils.Results import Results
 from utils.utils import TrainData, FeaturesSelectionsData
 
 
