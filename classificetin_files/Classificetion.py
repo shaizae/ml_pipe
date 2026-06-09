@@ -113,22 +113,19 @@ class Classification:
         target = create_shared_numpy(self.targets.pop_index(train_index), "target")
 
         features_selections_data = [FeaturesSelectionsData] * len(number_of_features)
-        for ind, number in enumerate(tqdm(number_of_features,desc="selecting features")):
+        for ind, number in enumerate(tqdm(number_of_features, desc="selecting features")):
             features_selections_data[ind] = FeaturesSelectionsData(algorithm=algorithm, features=fetchers,
                                                                    target=target, number_of_features=number)
 
         with Pool(processes=self._process_limit) as pool:
             runner = pool.map_async(features_selections, features_selections_data)
             results = runner.get()
-        train_data_list=[]
-        for train_data_class in tqdm(self._train_data,desc="adding features"):
+        train_data_list = []
+        for train_data_class in tqdm(self._train_data, desc="adding features"):
             for number in results:
-                dummy_train_data=train_data_class.copy()
+                dummy_train_data = train_data_class.copy()
                 dummy_train_data.set_features_selection(indexes=number)
                 train_data_list.append(dummy_train_data)
         self._train_data = train_data_list
-
-
-
-
-
+        fetchers.unlink()
+        target.unlink()

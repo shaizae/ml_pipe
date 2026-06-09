@@ -11,7 +11,7 @@ from sklearn.svm import SVC
 
 from classificetin_files.Classificetion import Classification
 from utils.utils import create_shared_numpy
-
+import numpy as np
 
 @pytest.fixture
 def iris_data():
@@ -36,15 +36,8 @@ def classifier(iris_data):
 
 @pytest.fixture
 def shared_array():
-    import numpy as np
 
     arr = np.arange(20).reshape(5, 4)
-
-    shm = create_shared_numpy(
-        arr,
-        f"test_{uuid.uuid4().hex}"
-    )
-
+    shm = create_shared_numpy(        arr,        f"test_{uuid.uuid4().hex}"    )
     yield shm, arr
-
     shm.unlink()
