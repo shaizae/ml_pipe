@@ -4,7 +4,9 @@ from multiprocessing import shared_memory
 from typing import Tuple, Any
 
 import numpy as np
+from sklearn.base import BaseEstimator
 from sklearn.feature_selection import SelectFromModel
+
 
 class SharedMemory:
     def __init__(self, memory: shared_memory.SharedMemory, shape: Tuple[Any, ...], dtype: np.dtype):
@@ -48,7 +50,8 @@ class TrainData:
     print: bool = False
     train_index: list[int] = None
     test_index: list[int] = None
-    featuresIndex:np.ndarray = None
+    featuresIndex: list[int]  = None
+
 
     @property
     def name(self):
@@ -60,18 +63,23 @@ class TrainData:
     def set_features_and_targets(self, features: SharedMemory, target: SharedMemory):
         self.features = features
         self.target = target
+        self.featuresIndex=list(range(self.features.shape[1]))
 
     def set_indexes(self, train_index: list[int], test_index: list[int]):
         self.train_index = train_index
         self.test_index = test_index
 
-    def __call__(self, train_features:np.ndarray, train_target:np.ndarray):
+    def set_features_selection(self, indexes: list[int] ):
+        self.featuresIndex = indexes
+
+    def __call__(self, train_features: np.ndarray, train_target: np.ndarray):
         self.model.fit(train_features, train_target)
         return self.model
 
 
 @dataclass(slots=True)
 class FeaturesSelectionsData:
-    algorithm : SelectFromModel
-    features :SharedMemory
-    target :SharedMemory
+    algorithm: BaseEstimator
+    features: SharedMemory
+    target: SharedMemory
+    number_of_features: int
