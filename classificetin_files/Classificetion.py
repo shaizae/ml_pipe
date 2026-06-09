@@ -7,10 +7,10 @@ from sklearn.base import BaseEstimator
 from sklearn.model_selection import train_test_split, KFold
 from tqdm import tqdm
 
-from Fetchers import Fetchers
-from Results import Results
-from Target import Target
-from utils import create_shared_numpy, TrainData
+from utils.Fetchers import Fetchers
+from utils.Results import Results
+from utils.Target import Target
+from utils.utils import create_shared_numpy, TrainData
 
 
 def train(train_data: TrainData):
