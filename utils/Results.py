@@ -20,11 +20,8 @@ class Results:
     def set_test(self, features_test, target_test):
         self.features_test = features_test
         self.target_test = target_test
-        self._pred_test = self.model.predict(self.features_test)
-        if not hasattr(self.model, "predict_proba"):
-            print(f"model {self.name} must support predict_proba for ROC curve")
-            return
-        self._predict_score = self.model.predict_proba(self.features_test)
+        self.predict()
+
 
     def predict(self):
         self._pred_test = self.model.predict(self.features_test)

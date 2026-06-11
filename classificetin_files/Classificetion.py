@@ -10,23 +10,8 @@ from tqdm import tqdm
 from utils.Fetchers import Fetchers
 from utils.Results import Results
 from utils.Target import Target
-from utils.utils import create_shared_numpy, TrainData
-
-
-def train(train_data: TrainData):
-    print(f"train start whit model: {train_data.name}") if train_data.print else None
-    features = train_data.features.array
-    target = train_data.target.array
-    train_features = features[train_data.train_index, ...]
-    train_target = target[train_data.train_index]
-    train_data(train_features, train_target)
-    print(f"train end whit model: {train_data.name}") if train_data.print else None
-    result = Results(train_data.model)
-    test_features = features[train_data.test_index, ...]
-    test_target = target[train_data.test_index]
-    result.set_test(test_features, test_target)
-    result.predict()
-    return result
+from utils.ultyprosses_functions import train, features_selections
+from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData
 
 
 class Classification:
@@ -72,7 +57,8 @@ class Classification:
             train_data.set_indexes(train_index, test_index)
 
         with Pool(processes=self._process_limit) as pool:
-            results = pool.map(train, self._train_data)
+            runner = pool.map_async(train, self._train_data)
+            results = runner.get()
 
         features.unlink()
         targe.unlink()
@@ -104,7 +90,8 @@ class Classification:
                 train_inputs.append(train_input)
 
             with Pool(processes=self._process_limit) as pool:
-                model_results = pool.map(train, train_inputs)
+                runner = pool.map_async(train, train_inputs)
+                model_results = runner.get()
 
             final_result = Results(train_data.model)
             for result in tqdm(model_results):
@@ -114,5 +101,31 @@ class Classification:
         X_train.unlink()
         y_train.unlink()
         return results
-    def laevo_one_out(self):
+
+    def leave_one_out(self):
         return self.k_folds(n_splits=len(self.targets.data))
+
+    def fetcher_selection(self, algorithm: BaseEstimator, number_of_features: list[int]):
+        _, train_index = train_test_split(
+            np.arange(len(self.fetchers.data)), test_size=0.1)
+
+        fetchers = create_shared_numpy(self.fetchers.pop_index(train_index).values, "fetchers")
+        target = create_shared_numpy(self.targets.pop_index(train_index), "target")
+
+        features_selections_data = [FeaturesSelectionsData] * len(number_of_features)
+        for ind, number in enumerate(tqdm(number_of_features, desc="selecting features")):
+            features_selections_data[ind] = FeaturesSelectionsData(algorithm=algorithm, features=fetchers,
+                                                                   target=target, number_of_features=number)
+
+        with Pool(processes=self._process_limit) as pool:
+            runner = pool.map_async(features_selections, features_selections_data)
+            results = runner.get()
+        train_data_list = []
+        for train_data_class in tqdm(self._train_data, desc="adding features"):
+            for number in results:
+                dummy_train_data = train_data_class.copy()
+                dummy_train_data.set_features_selection(indexes=number)
+                train_data_list.append(dummy_train_data)
+        self._train_data = train_data_list
+        fetchers.unlink()
+        target.unlink()

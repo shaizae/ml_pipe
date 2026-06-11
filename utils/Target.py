@@ -8,17 +8,30 @@ class Target:
     def __init__(self):
         self._data: np.ndarray = None
         self.decrypt_map: dict[Any, int] = None
+        self._encoder: LabelEncoder = None
 
     def load_new_data(self, target: np.ndarray):
-        encoder = LabelEncoder()
-        encoded = encoder.fit_transform(target)
+        self._encoder = LabelEncoder()
+        encoded = self._encoder.fit_transform(target)
         mapping = {
             label: int(index)
-            for index, label in enumerate(encoder.classes_)
+            for index, label in enumerate(self._encoder.classes_)
         }
         self._data = encoded
         self.decrypt_map = mapping
 
+    def pop_index(self, index: list[int]):
+        val = self._data[index]
+        self._data = np.delete(self._data, index)
+        return val
+
     @property
     def data(self):
         return self._data
+
+    @property
+    def show_original_data(self):
+        if self._data is None:
+            return None
+
+        return self._encoder.inverse_transform(self._data)
