@@ -5,7 +5,6 @@ from typing import Tuple, Any
 
 import numpy as np
 from sklearn.base import BaseEstimator
-from sklearn.feature_selection import SelectFromModel
 
 
 class SharedMemory:
@@ -50,8 +49,7 @@ class TrainData:
     print: bool = False
     train_index: list[int] = None
     test_index: list[int] = None
-    featuresIndex: list[int]  = None
-
+    featuresIndex: list[int] = None
 
     @property
     def name(self):
@@ -63,13 +61,13 @@ class TrainData:
     def set_features_and_targets(self, features: SharedMemory, target: SharedMemory):
         self.features = features
         self.target = target
-        self.featuresIndex=list(range(self.features.shape[1]))
+        self.featuresIndex = list(range(self.features.shape[1]))
 
     def set_indexes(self, train_index: list[int], test_index: list[int]):
         self.train_index = train_index
         self.test_index = test_index
 
-    def set_features_selection(self, indexes: list[int] ):
+    def set_features_selection(self, indexes: list[int]):
         self.featuresIndex = indexes
 
     def __call__(self, train_features: np.ndarray, train_target: np.ndarray):

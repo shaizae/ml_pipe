@@ -49,7 +49,7 @@ class Classification:
         train_index, test_index = train_test_split(
             np.arange(len(self.fetchers.data)), test_size=ratio)
         targe = create_shared_numpy(self.targets.data, "targe")
-        features = create_shared_numpy(self.fetchers.data.to_numpy(), "features")
+        features = create_shared_numpy(self.fetchers.data, "features")
 
         for train_data in self._train_data:
             train_data.set_features_and_targets(features, targe)
@@ -74,7 +74,7 @@ class Classification:
         results = []
         kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-        X_train = create_shared_numpy(self.fetchers.data.to_numpy(), f"features")
+        X_train = create_shared_numpy(self.fetchers.data, f"features")
         y_train = create_shared_numpy(self.targets.data, f"target")
         bar = tqdm(self._train_data)
 
@@ -109,7 +109,7 @@ class Classification:
         _, train_index = train_test_split(
             np.arange(len(self.fetchers.data)), test_size=0.1)
 
-        fetchers = create_shared_numpy(self.fetchers.pop_index(train_index).values, "fetchers")
+        fetchers = create_shared_numpy(self.fetchers.pop_index(train_index), "fetchers")
         target = create_shared_numpy(self.targets.pop_index(train_index), "target")
 
         features_selections_data = [FeaturesSelectionsData] * len(number_of_features)

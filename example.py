@@ -1,10 +1,11 @@
+import os
+
 import pandas as pd
 from sklearn.datasets import load_iris as DB
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.feature_selection import chi2
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
-
 from classificetin_files.Classificetion import Classification
 
 
@@ -25,14 +26,13 @@ def main():
     }
     y = pd.Series(data.target).map(target_names)
     test_class = Classification()
-    test_class.process_limit(2)
 
     test_class.set(X, y, [RandomForestClassifier(), AdaBoostClassifier(), DecisionTreeClassifier(), SVC()])
-    test_class.fetcher_selection(chi2,list(range(5,30,5)))
+    test_class.fetchers.standard_scaler()
+    # test_class.fetcher_selection(chi2,list(range(5,30,5)))
     res = test_class.leave_one_out()
     for i in res:
-        i.plot_confusion_matrix()
-        i.plot_roc_curve()
+        i.save_pdf_report(r"C:\python_projrcts\ml_pipe\tests\pdf")
 
 
 if __name__ == '__main__':

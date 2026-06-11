@@ -1,5 +1,7 @@
-from utils.Target import Target
 import numpy as np
+
+from utils.Target import Target
+
 
 def test_target_encoding():
     target = Target()
@@ -23,8 +25,6 @@ def test_target_output_is_numeric():
     assert np.issubdtype(target.data.dtype, np.integer)
 
 
-
-
 def test_pop_target_data():
     target = Target()
     target.load_new_data(np.array(["a", "b", "c", "d", "e", "f"]))
@@ -34,3 +34,17 @@ def test_pop_target_data():
         target._encoder.inverse_transform(popped), np.array(["b", "f", "d"]))
 
     assert np.array_equal(target.show_original_data, np.array(["a", "c", "e"]))
+
+
+def test_iter():
+    target = Target()
+
+    target.load_new_data(
+        np.array(["cat", "dog", "cat", "bird"])
+    )
+
+    expected = target.data.tolist()
+
+    result = list(target)
+
+    assert result == expected

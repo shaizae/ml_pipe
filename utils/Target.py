@@ -2,6 +2,7 @@ from typing import Any
 
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
+from tqdm import trange
 
 
 class Target:
@@ -35,3 +36,7 @@ class Target:
             return None
 
         return self._encoder.inverse_transform(self._data)
+
+    def __iter__(self):
+        for row in trange(self._data.shape[0]):
+            yield self._data[row]

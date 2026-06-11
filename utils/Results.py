@@ -1,9 +1,28 @@
+import datetime
+import os.path
+
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import label_binarize
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Image,
+)
+from reportlab.lib.styles import getSampleStyleSheet
+
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+)
 
 class Results:
     def __init__(self, model):
@@ -22,7 +41,6 @@ class Results:
         self.target_test = target_test
         self.predict()
 
-
     def predict(self):
         self._pred_test = self.model.predict(self.features_test)
         if not hasattr(self.model, "predict_proba"):
@@ -30,7 +48,7 @@ class Results:
             return
         self._predict_score = self.model.predict_proba(self.features_test)
 
-    def plot_confusion_matrix(self, labels=None, normalize=None):
+    def plot_confusion_matrix(self, labels=None, normalize=None,show:bool=True):
         """
         normalize: None, 'true', 'pred', 'all'
         """
@@ -40,9 +58,10 @@ class Results:
         disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
         disp.plot(cmap="Blues", values_format=".2f" if normalize else "d")
         plt.title(f"Confusion Matrix - {self.name}")
-        plt.show()
+        if show:
+            plt.show()
 
-    def plot_roc_curve(self):
+    def plot_roc_curve(self,show:bool=True):
         """
         Works for binary classification.
         For multiclass, you’d need binarization (handled below).
@@ -61,7 +80,8 @@ class Results:
             plt.ylabel("True Positive Rate")
             plt.title(f"ROC Curve - {self.name}")
             plt.legend()
-            plt.show()
+            if show:
+                plt.show()
             return
 
         y_test_bin = label_binarize(self.target_test, classes=classes)
@@ -79,7 +99,8 @@ class Results:
         plt.ylabel("True Positive Rate")
         plt.title(f"Multiclass ROC - {self.name}")
         plt.legend()
-        plt.show()
+        if show:
+            plt.show()
 
     def append_results(self, result: Results):
         """
@@ -123,3 +144,82 @@ class Results:
                 )
 
         return self
+
+    def save_pdf_report(self, filename: str):
+        filename=os.path.join(filename, f"report{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.pdf")
+        if self._pred_test is None:
+            raise ValueError("No predictions available")
+
+        styles = getSampleStyleSheet()
+
+        doc = SimpleDocTemplate(filename)
+        elements = []
+
+        elements.append(
+            Paragraph(f"Classification Report - {self.name}",
+                      styles["Title"])
+        )
+
+        elements.append(Spacer(1, 12))
+
+        accuracy = accuracy_score(self.target_test, self._pred_test)
+        precision = precision_score(
+            self.target_test,
+            self._pred_test,
+            average="weighted"
+        )
+        recall = recall_score(
+            self.target_test,
+            self._pred_test,
+            average="weighted"
+        )
+        f1 = f1_score(
+            self.target_test,
+            self._pred_test,
+            average="weighted"
+        )
+
+        elements.append(
+            Paragraph(f"Accuracy: {accuracy:.4f}", styles["BodyText"])
+        )
+        elements.append(
+            Paragraph(f"Precision: {precision:.4f}", styles["BodyText"])
+        )
+        elements.append(
+            Paragraph(f"Recall: {recall:.4f}", styles["BodyText"])
+        )
+        elements.append(
+            Paragraph(f"F1 Score: {f1:.4f}", styles["BodyText"])
+        )
+
+        elements.append(Spacer(1, 20))
+
+        with TemporaryDirectory() as tmpdir:
+
+            cm_path = Path(tmpdir) / "cm.png"
+
+            self.plot_confusion_matrix(show=False)
+            plt.savefig(cm_path, bbox_inches="tight")
+            plt.close()
+
+            elements.append(
+                Paragraph("Confusion Matrix", styles["Heading2"])
+            )
+            elements.append(Image(str(cm_path), width=400, height=300))
+
+            if self._predict_score is not None:
+                roc_path = Path(tmpdir) / "roc.png"
+
+                self.plot_roc_curve(show=False)
+                plt.savefig(roc_path, bbox_inches="tight")
+                plt.close()
+
+                elements.append(Spacer(1, 20))
+                elements.append(
+                    Paragraph("ROC Curve", styles["Heading2"])
+                )
+                elements.append(
+                    Image(str(roc_path), width=400, height=300)
+                )
+
+            doc.build(elements)
