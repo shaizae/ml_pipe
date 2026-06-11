@@ -3,7 +3,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from pandas import Index
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler,PolynomialFeatures
+
 from tqdm import trange
 
 
@@ -59,4 +60,10 @@ class Fetchers:
 
     def median(self):
         return np.median(self._data)
+
+    def polynomial_features(self,degree: int=2,include_bias:bool=False) :
+        polynomial_features = PolynomialFeatures(degree=degree, include_bias=include_bias)
+        self._data=polynomial_features.fit_transform(self._data)
+        return self.data
+
 
