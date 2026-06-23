@@ -1,3 +1,4 @@
+import atexit
 from copy import deepcopy
 from dataclasses import dataclass
 from multiprocessing import shared_memory
@@ -7,15 +8,40 @@ import numpy as np
 from sklearn.base import BaseEstimator
 
 
+from multiprocessing import shared_memory
+from typing import Tuple, Any
+import numpy as np
+
+
 class SharedMemory:
-    def __init__(self, memory: shared_memory.SharedMemory, shape: Tuple[Any, ...], dtype: np.dtype):
+    _shms = []
+
+    def __init__(self, memory: shared_memory.SharedMemory,
+                 shape: Tuple[Any, ...],
+                 dtype: np.dtype):
+
         self.shm = memory
         self.shape = shape
         self.dtype = dtype
 
+        SharedMemory._shms.append(self)
+
     def unlink(self):
         self.shm.close()
         self.shm.unlink()
+
+        if self in SharedMemory._shms:
+            SharedMemory._shms.remove(self)
+
+    @staticmethod
+    def cleanup():
+        for shm in SharedMemory._shms.copy():
+            try:
+                shm.unlink()
+            except Exception:
+                pass
+
+        SharedMemory._shms.clear()
 
     @property
     def array(self):
@@ -24,6 +50,7 @@ class SharedMemory:
             dtype=self.dtype,
             buffer=self.shm.buf
         )
+
 
 
 def create_shared_numpy(arr: np.ndarray, name: str) -> SharedMemory:

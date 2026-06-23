@@ -11,7 +11,7 @@ from utils.Fetchers import Fetchers
 from utils.Results import Results
 from utils.Target import Target
 from utils.ultyprosses_functions import train, features_selections
-from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData
+from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData,SharedMemory
 
 
 class Classification:
@@ -55,13 +55,14 @@ class Classification:
             train_data.set_features_and_targets(features, targe)
             train_data.print = True
             train_data.set_indexes(train_index, test_index)
-
-        with Pool(processes=self._process_limit) as pool:
-            runner = pool.map_async(train, self._train_data)
-            results = runner.get()
-
-        features.unlink()
-        targe.unlink()
+        try:
+            with Pool(processes=self._process_limit) as pool:
+                runner = pool.map_async(train, self._train_data)
+                results = runner.get()
+        except Exception as e:
+            print(f"training fail error={e}")
+        finally:
+            SharedMemory.cleanup()
         return results
 
     def k_folds(self, n_splits: int = 5):
@@ -88,18 +89,19 @@ class Classification:
                 train_input = train_data.copy()
                 train_input.set_indexes(train_index, test_index)
                 train_inputs.append(train_input)
+            try:
+                with Pool(processes=self._process_limit) as pool:
+                    runner = pool.map_async(train, train_inputs)
+                    model_results = runner.get()
 
-            with Pool(processes=self._process_limit) as pool:
-                runner = pool.map_async(train, train_inputs)
-                model_results = runner.get()
-
-            final_result = Results(train_data.model)
-            for result in tqdm(model_results):
-                final_result.append_results(result)
-            results.append(final_result)
-
-        X_train.unlink()
-        y_train.unlink()
+                final_result = Results(train_data.model)
+                for result in tqdm(model_results):
+                    final_result.append_results(result)
+                results.append(final_result)
+            except Exception as e:
+                print(f"training fail error={e}")
+            finally:
+                SharedMemory.cleanup()
         return results
 
     def leave_one_out(self):
@@ -116,10 +118,16 @@ class Classification:
         for ind, number in enumerate(tqdm(number_of_features, desc="selecting features")):
             features_selections_data[ind] = FeaturesSelectionsData(algorithm=algorithm, features=fetchers,
                                                                    target=target, number_of_features=number)
+        try:
+            with Pool(processes=self._process_limit) as pool:
+                runner = pool.map_async(features_selections, features_selections_data)
+                results = runner.get()
+        except Exception as e:
+            print(f"fetcher selection fail error={e}")
 
-        with Pool(processes=self._process_limit) as pool:
-            runner = pool.map_async(features_selections, features_selections_data)
-            results = runner.get()
+        finally:
+            SharedMemory.cleanup()
+
         train_data_list = []
         for train_data_class in tqdm(self._train_data, desc="adding features"):
             for number in results:
@@ -127,5 +135,3 @@ class Classification:
                 dummy_train_data.set_features_selection(indexes=number)
                 train_data_list.append(dummy_train_data)
         self._train_data = train_data_list
-        fetchers.unlink()
-        target.unlink()

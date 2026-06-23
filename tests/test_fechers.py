@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 import pandas as pd
+import pytest
 from pandas import Index
 
 from tests.conftest import fetchers_with_data
@@ -268,3 +269,56 @@ def test_std():
 def test_median():
     fetchers, _ = small_fetchers()
     assert fetchers.median() == 3.5
+def test_valid_update_replaces_data(fetchers_with_data):
+    new_data = np.array([[9.0, 8.0], [7.0, 6.0], [5.0, 4.0]])
+    fetchers_with_data.update_data(new_data)
+    np.testing.assert_array_equal(fetchers_with_data.data, new_data)
+
+def test_wrong_number_of_rows_raises(fetchers_with_data):
+    bad_data = np.array([[1.0, 2.0], [3.0, 4.0]])  # 2 rows instead of 3
+    with pytest.raises(ValueError):
+        fetchers_with_data.update_data(bad_data)
+
+def test_wrong_number_of_cols_raises(fetchers_with_data):
+    bad_data = np.array([[1.0], [2.0], [3.0]])  # 1 col instead of 2
+    with pytest.raises(ValueError):
+        fetchers_with_data.update_data(bad_data)
+
+def test_wrong_rows_error_message(fetchers_with_data):
+    bad_data = np.array([[1.0, 2.0]])
+    with pytest.raises(ValueError, match="new data must have same shape as existing data"):
+        fetchers_with_data.update_data(bad_data)
+
+def test_wrong_cols_error_message(fetchers_with_data):
+    bad_data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
+    with pytest.raises(ValueError, match="new data must have same shape as existing data"):
+        fetchers_with_data.update_data(bad_data)
+
+def test_data_not_updated_on_row_mismatch(fetchers_with_data):
+    original = fetchers_with_data.data.copy()
+    bad_data = np.array([[1.0, 2.0], [3.0, 4.0]])
+    with pytest.raises(ValueError):
+        fetchers_with_data.update_data(bad_data)
+    np.testing.assert_array_equal(fetchers_with_data.data, original)
+
+def test_data_not_updated_on_col_mismatch(fetchers_with_data):
+    original = fetchers_with_data.data.copy()
+    bad_data = np.array([[1.0], [2.0], [3.0]])
+    with pytest.raises(ValueError):
+        fetchers_with_data.update_data(bad_data)
+    np.testing.assert_array_equal(fetchers_with_data.data, original)
+
+def test_same_shape_different_values(fetchers_with_data):
+    new_data = np.zeros((3, 2))
+    fetchers_with_data.update_data(new_data)
+    np.testing.assert_array_equal(fetchers_with_data.data, new_data)
+
+def test_update_with_negative_values(fetchers_with_data):
+    new_data = np.array([[-1.0, -2.0], [-3.0, -4.0], [-5.0, -6.0]])
+    fetchers_with_data.update_data(new_data)
+    np.testing.assert_array_equal(fetchers_with_data.data, new_data)
+
+def test_extra_dimension_raises(fetchers_with_data):
+    bad_data = np.ones((3, 2, 2))
+    with pytest.raises((ValueError, IndexError)):
+        fetchers_with_data.update_data(bad_data)

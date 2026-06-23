@@ -29,6 +29,7 @@ def classifier(iris_data):
     X, y = iris_data
     cls = Classification()
     cls.set(X, y, [RandomForestClassifier(n_estimators=10, random_state=42), SVC(probability=True)])
+    cls.process_limit(2)
     return cls
 
 

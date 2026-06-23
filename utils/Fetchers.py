@@ -3,8 +3,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from pandas import Index
-from sklearn.preprocessing import StandardScaler, MinMaxScaler,PolynomialFeatures
-
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, PolynomialFeatures
 from tqdm import trange
 
 
@@ -25,6 +24,17 @@ class Fetchers:
     @property
     def data(self):
         return self._data
+
+    def update_data(self, new_data: np.ndarray):
+        if new_data.shape[0] != self._data.shape[0]:
+            raise ValueError("new data must have same shape as existing data")
+        if new_data.shape[1] != self._data.shape[1]:
+            raise ValueError("new data must have same shape as existing data")
+        self._data = new_data
+
+    @property
+    def columns(self):
+        return self._columns
 
     @property
     def columns(self):
@@ -61,9 +71,7 @@ class Fetchers:
     def median(self):
         return np.median(self._data)
 
-    def polynomial_features(self,degree: int=2,include_bias:bool=False) :
+    def polynomial_features(self, degree: int = 2, include_bias: bool = False):
         polynomial_features = PolynomialFeatures(degree=degree, include_bias=include_bias)
-        self._data=polynomial_features.fit_transform(self._data)
+        self._data = polynomial_features.fit_transform(self._data)
         return self.data
-
-
