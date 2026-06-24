@@ -1,4 +1,3 @@
-import atexit
 from copy import deepcopy
 from dataclasses import dataclass
 from multiprocessing import shared_memory
@@ -6,11 +5,6 @@ from typing import Tuple, Any
 
 import numpy as np
 from sklearn.base import BaseEstimator
-
-
-from multiprocessing import shared_memory
-from typing import Tuple, Any
-import numpy as np
 
 
 class SharedMemory:
@@ -34,12 +28,18 @@ class SharedMemory:
             SharedMemory._shms.remove(self)
 
     @staticmethod
+    def add(shm):
+        SharedMemory._shms.append(shm)
+
+    @staticmethod
     def cleanup():
-        for shm in SharedMemory._shms.copy():
+        for shm in SharedMemory._shms[:]:
             try:
                 shm.unlink()
-            except Exception:
+            except FileNotFoundError:
                 pass
+            except Exception as e:
+                print(f"cleanup error: {e}")
 
         SharedMemory._shms.clear()
 
@@ -52,20 +52,14 @@ class SharedMemory:
         )
 
 
-
 def create_shared_numpy(arr: np.ndarray, name: str) -> SharedMemory:
-    """
-    Create shared memory from a NumPy array.
-
-    Returns:
-        shm: SharedMemory object
-        shape: original shape
-        dtype: original dtype
-    """
-    shm = shared_memory.SharedMemory(create=True, size=arr.nbytes, name=name)
-    shared_arr = np.ndarray(arr.shape, dtype=arr.dtype, buffer=shm.buf)
-    shared_arr[:] = arr[:]
-    return SharedMemory(shm, arr.shape, arr.dtype)
+    memory = shared_memory.SharedMemory(create=True, size=arr.nbytes, name=name)
+    shared_array = np.ndarray(arr.shape, dtype=arr.dtype, buffer=memory.buf)
+    shared_array[:] = arr[:]
+    SharedMemory.add(memory)
+    shared=SharedMemory(memory=memory, shape=arr.shape, dtype=arr.dtype)
+    SharedMemory.add(shared)
+    return shared
 
 
 @dataclass(slots=True)
