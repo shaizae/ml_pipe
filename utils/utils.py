@@ -2,7 +2,6 @@ from copy import deepcopy
 from dataclasses import dataclass
 from enum import StrEnum
 from multiprocessing import shared_memory
-from pathlib import Path
 from typing import Tuple, Any
 
 import numpy as np
@@ -12,7 +11,9 @@ from sklearn.base import BaseEstimator
 class SharedMemory:
     _shms = []
 
-    def __init__(self, memory: shared_memory.SharedMemory, shape: Tuple[Any, ...], dtype: np.dtype):
+    def __init__(self, memory: shared_memory.SharedMemory,
+                 shape: Tuple[Any, ...],
+                 dtype: np.dtype):
 
         self.shm = memory
         self.shape = shape
@@ -51,9 +52,6 @@ class SharedMemory:
             buffer=self.shm.buf
         )
 
-    def __repr__(self):
-        return f"SharedMemory - name={self.shm.name}, shape={self.shape}, dtype={self.dtype}"
-
 
 def create_shared_numpy(arr: np.ndarray, name: str) -> SharedMemory:
     memory = shared_memory.SharedMemory(create=True, size=arr.nbytes, name=name)
@@ -85,9 +83,6 @@ class TrainData:
     def set_features_and_targets(self, features: SharedMemory, target: SharedMemory):
         self.features = features
         self.target = target
-        if len(self.features.shape) == 1:
-            self.featuresIndex = [0]
-            return
         self.featuresIndex = list(range(self.features.shape[1]))
 
     def set_indexes(self, train_index: list[int], test_index: list[int]):
@@ -115,8 +110,3 @@ class FilteringCriteria(StrEnum):
     f1 = "f1"
     recall = "recall"
     precision = "precision"
-
-def create_path(path: str) -> Path:
-    p = Path(path)
-    p.mkdir(parents=True, exist_ok=True)  # creates all missing folders
-    return p

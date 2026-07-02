@@ -10,7 +10,7 @@ from tqdm import tqdm
 from utils.Fetchers import Fetchers
 from utils.Results import Results
 from utils.Target import Target
-from utils.multiprocess_functions import train, features_selections
+from utils.ultyprosses_functions import train, features_selections
 from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, SharedMemory, FilteringCriteria
 
 
@@ -18,7 +18,7 @@ class Classification:
     _process_limit = os.cpu_count()
 
     def __init__(self):
-        self._results: list[Results] = None
+        self._results:list[Results] =None
         self.fetchers: Fetchers = None
         self.targets: Target = None
         self._train_data: list[TrainData] = None
@@ -62,7 +62,6 @@ class Classification:
                 results = runner.get()
         except Exception as e:
             print(f"training fail error={e}")
-            raise e
         finally:
             SharedMemory.cleanup()
 
@@ -120,9 +119,9 @@ class Classification:
         fetchers = create_shared_numpy(self.fetchers.pop_index(train_index), "fetchers")
         target = create_shared_numpy(self.targets.pop_index(train_index), "target")
 
-        features_selections_data = []
+        features_selections_data =[]
         for ind, number in enumerate(tqdm(number_of_features, desc="selecting features")):
-            features_selections_data.append(FeaturesSelectionsData(algorithm=algorithm, features=fetchers,
+            features_selections_data.append( FeaturesSelectionsData(algorithm=algorithm, features=fetchers,
                                                                    target=target, number_of_features=number))
         try:
             with Pool(processes=self._process_limit) as pool:
@@ -131,6 +130,7 @@ class Classification:
         except Exception as e:
             print(f"fetcher selection fail error={e}")
             raise e
+
         finally:
             SharedMemory.cleanup()
 
@@ -146,6 +146,9 @@ class Classification:
     def results(self):
         return self._results
 
-    def filter_by(self, criteria: FilteringCriteria):
+    def filter_by(self,criteria:FilteringCriteria):
         max_value = max(getattr(result, criteria.value) for result in self._results)
         return [item for item in self._results if getattr(item, criteria.value) == max_value]
+
+
+

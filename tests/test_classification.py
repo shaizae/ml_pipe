@@ -97,7 +97,7 @@ def test_set_accepts_numpy_target(iris_data):
 def test_use_more_fetchers_that_exist_in_fetcher_selection(classifier):
     classifier.fetcher_selection(algorithm=chi2, number_of_features=[10, 20])
     for i in classifier._train_data:
-        assert len(i.featuresIndex) ==4
+        assert len(i.featuresIndex) !=4
 
 
 

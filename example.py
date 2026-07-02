@@ -26,16 +26,13 @@ def main():
     }
     y = pd.Series(data.target).map(target_names)
     test_class = Classification()
-    test_class.process_limit(2)
 
     test_class.set(X, y, [RandomForestClassifier(), AdaBoostClassifier(), DecisionTreeClassifier(), SVC()])
-    test_class.fetchers.min_max_scaler()
+    test_class.fetchers.standard_scaler()
     test_class.fetcher_selection(chi2,[1,2,3])
     test_class.train_test_split()
     filterd_results=test_class.filter_by(FilteringCriteria.accuracy)
-    for i in filterd_results:
-        i.save_results(r".\tests\pdf")
-
+    print(filterd_results)
 
 
 if __name__ == '__main__':
