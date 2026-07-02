@@ -44,7 +44,7 @@ def test_train_test_split_ratio_too_large(classifier, ratio):
 
 
 def test_train_test_split_runs(classifier):
-    results = classifier.train_test_split(0.2)
+    results = classifier.train_test_split(0.8)
 
     assert len(results) == 2
 

@@ -5,18 +5,43 @@ from typing import Tuple, Any
 
 import numpy as np
 from sklearn.base import BaseEstimator
-from sklearn.feature_selection import SelectFromModel
 
 
 class SharedMemory:
-    def __init__(self, memory: shared_memory.SharedMemory, shape: Tuple[Any, ...], dtype: np.dtype):
+    _shms = []
+
+    def __init__(self, memory: shared_memory.SharedMemory,
+                 shape: Tuple[Any, ...],
+                 dtype: np.dtype):
+
         self.shm = memory
         self.shape = shape
         self.dtype = dtype
 
+        SharedMemory._shms.append(self)
+
     def unlink(self):
         self.shm.close()
         self.shm.unlink()
+
+        if self in SharedMemory._shms:
+            SharedMemory._shms.remove(self)
+
+    @staticmethod
+    def add(shm):
+        SharedMemory._shms.append(shm)
+
+    @staticmethod
+    def cleanup():
+        for shm in SharedMemory._shms[:]:
+            try:
+                shm.unlink()
+            except FileNotFoundError:
+                pass
+            except Exception as e:
+                print(f"cleanup error: {e}")
+
+        SharedMemory._shms.clear()
 
     @property
     def array(self):
@@ -28,18 +53,13 @@ class SharedMemory:
 
 
 def create_shared_numpy(arr: np.ndarray, name: str) -> SharedMemory:
-    """
-    Create shared memory from a NumPy array.
-
-    Returns:
-        shm: SharedMemory object
-        shape: original shape
-        dtype: original dtype
-    """
-    shm = shared_memory.SharedMemory(create=True, size=arr.nbytes, name=name)
-    shared_arr = np.ndarray(arr.shape, dtype=arr.dtype, buffer=shm.buf)
-    shared_arr[:] = arr[:]
-    return SharedMemory(shm, arr.shape, arr.dtype)
+    memory = shared_memory.SharedMemory(create=True, size=arr.nbytes, name=name)
+    shared_array = np.ndarray(arr.shape, dtype=arr.dtype, buffer=memory.buf)
+    shared_array[:] = arr[:]
+    SharedMemory.add(memory)
+    shared=SharedMemory(memory=memory, shape=arr.shape, dtype=arr.dtype)
+    SharedMemory.add(shared)
+    return shared
 
 
 @dataclass(slots=True)
@@ -50,8 +70,7 @@ class TrainData:
     print: bool = False
     train_index: list[int] = None
     test_index: list[int] = None
-    featuresIndex: list[int]  = None
-
+    featuresIndex: list[int] = None
 
     @property
     def name(self):
@@ -63,13 +82,13 @@ class TrainData:
     def set_features_and_targets(self, features: SharedMemory, target: SharedMemory):
         self.features = features
         self.target = target
-        self.featuresIndex=list(range(self.features.shape[1]))
+        self.featuresIndex = list(range(self.features.shape[1]))
 
     def set_indexes(self, train_index: list[int], test_index: list[int]):
         self.train_index = train_index
         self.test_index = test_index
 
-    def set_features_selection(self, indexes: list[int] ):
+    def set_features_selection(self, indexes: list[int]):
         self.featuresIndex = indexes
 
     def __call__(self, train_features: np.ndarray, train_target: np.ndarray):
