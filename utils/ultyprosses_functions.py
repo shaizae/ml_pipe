@@ -25,6 +25,8 @@ def train(train_data: TrainData):
 def features_selections(features_selections_data: FeaturesSelectionsData):
     features = features_selections_data.features.array
     target = features_selections_data.target.array
+    if features_selections_data.number_of_features>=features.shape[1]:
+        return list(range(features.shape[1]))
     algorithm = features_selections_data.algorithm
     select = SelectKBest(algorithm, k=features_selections_data.number_of_features)
     select.fit(features, target)

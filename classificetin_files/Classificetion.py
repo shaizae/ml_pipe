@@ -11,13 +11,14 @@ from utils.Fetchers import Fetchers
 from utils.Results import Results
 from utils.Target import Target
 from utils.ultyprosses_functions import train, features_selections
-from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData,SharedMemory
+from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, SharedMemory, FilteringCriteria
 
 
 class Classification:
     _process_limit = os.cpu_count()
 
     def __init__(self):
+        self._results:list[Results] =None
         self.fetchers: Fetchers = None
         self.targets: Target = None
         self._train_data: list[TrainData] = None
@@ -63,6 +64,8 @@ class Classification:
             print(f"training fail error={e}")
         finally:
             SharedMemory.cleanup()
+
+        self._results = results
         return results
 
     def k_folds(self, n_splits: int = 5):
@@ -102,6 +105,8 @@ class Classification:
                 print(f"training fail error={e}")
             finally:
                 SharedMemory.cleanup()
+
+        self._results = results
         return results
 
     def leave_one_out(self):
@@ -114,16 +119,17 @@ class Classification:
         fetchers = create_shared_numpy(self.fetchers.pop_index(train_index), "fetchers")
         target = create_shared_numpy(self.targets.pop_index(train_index), "target")
 
-        features_selections_data = [FeaturesSelectionsData] * len(number_of_features)
+        features_selections_data =[]
         for ind, number in enumerate(tqdm(number_of_features, desc="selecting features")):
-            features_selections_data[ind] = FeaturesSelectionsData(algorithm=algorithm, features=fetchers,
-                                                                   target=target, number_of_features=number)
+            features_selections_data.append( FeaturesSelectionsData(algorithm=algorithm, features=fetchers,
+                                                                   target=target, number_of_features=number))
         try:
             with Pool(processes=self._process_limit) as pool:
                 runner = pool.map_async(features_selections, features_selections_data)
                 results = runner.get()
         except Exception as e:
             print(f"fetcher selection fail error={e}")
+            raise e
 
         finally:
             SharedMemory.cleanup()
@@ -135,3 +141,14 @@ class Classification:
                 dummy_train_data.set_features_selection(indexes=number)
                 train_data_list.append(dummy_train_data)
         self._train_data = train_data_list
+
+    @property
+    def results(self):
+        return self._results
+
+    def filter_by(self,criteria:FilteringCriteria):
+        max_value = max(getattr(result, criteria.value) for result in self._results)
+        return [item for item in self._results if getattr(item, criteria.value) == max_value]
+
+
+

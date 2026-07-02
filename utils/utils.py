@@ -1,5 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass
+from enum import StrEnum
 from multiprocessing import shared_memory
 from typing import Tuple, Any
 
@@ -57,7 +58,7 @@ def create_shared_numpy(arr: np.ndarray, name: str) -> SharedMemory:
     shared_array = np.ndarray(arr.shape, dtype=arr.dtype, buffer=memory.buf)
     shared_array[:] = arr[:]
     SharedMemory.add(memory)
-    shared=SharedMemory(memory=memory, shape=arr.shape, dtype=arr.dtype)
+    shared = SharedMemory(memory=memory, shape=arr.shape, dtype=arr.dtype)
     SharedMemory.add(shared)
     return shared
 
@@ -102,3 +103,10 @@ class FeaturesSelectionsData:
     features: SharedMemory
     target: SharedMemory
     number_of_features: int
+
+
+class FilteringCriteria(StrEnum):
+    accuracy = "accuracy"
+    f1 = "f1"
+    recall = "recall"
+    precision = "precision"

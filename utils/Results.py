@@ -1,28 +1,26 @@
 import datetime
 import os.path
-
-import matplotlib.pyplot as plt
-import numpy as np
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-from sklearn.metrics import roc_curve, auc
-from sklearn.preprocessing import label_binarize
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import matplotlib.pyplot as plt
+import numpy as np
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
     Spacer,
     Image,
 )
-from reportlab.lib.styles import getSampleStyleSheet
-
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
-    recall_score,
-    f1_score,
+    f1_score, recall_score,
 )
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import roc_curve, auc
+from sklearn.preprocessing import label_binarize
+
 
 class Results:
     def __init__(self, model):
@@ -31,10 +29,30 @@ class Results:
         self.target_test = None
         self._pred_test = None
         self._predict_score = None
+        self._accuracy: float = 0
+        self._precision: float = 0
+        self._recall: float = 0
+        self._f1: float = 0
 
     @property
     def name(self):
         return self.model.__class__.__name__
+
+    @property
+    def accuracy(self):
+        return self._accuracy
+
+    @property
+    def precision(self):
+        return self._precision
+
+    @property
+    def recall(self):
+        return self._recall
+
+    @property
+    def f1(self):
+        return self._f1
 
     def set_test(self, features_test, target_test):
         self.features_test = features_test
@@ -47,8 +65,12 @@ class Results:
             print(f"model {self.name} must support predict_proba for ROC curve")
             return
         self._predict_score = self.model.predict_proba(self.features_test)
+        self._accuracy = accuracy_score(self.target_test, self._pred_test)
+        self._precision = precision_score(self.target_test, self._pred_test, average="weighted")
+        self._recall = recall_score(self.target_test, self._pred_test, average="weighted")
+        self._f1 = f1_score(self.target_test, self._pred_test, average="weighted")
 
-    def plot_confusion_matrix(self, labels=None, normalize=None,show:bool=True):
+    def plot_confusion_matrix(self, labels=None, normalize=None, show: bool = True):
         """
         normalize: None, 'true', 'pred', 'all'
         """
@@ -61,7 +83,7 @@ class Results:
         if show:
             plt.show()
 
-    def plot_roc_curve(self,show:bool=True):
+    def plot_roc_curve(self, show: bool = True):
         """
         Works for binary classification.
         For multiclass, you’d need binarization (handled below).
@@ -146,7 +168,8 @@ class Results:
         return self
 
     def save_pdf_report(self, filename: str):
-        filename=os.path.join(filename, f"report{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.pdf")
+        filename = os.path.join(filename,
+                                f"report{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.pdf")
         if self._pred_test is None:
             raise ValueError("No predictions available")
 
@@ -162,34 +185,17 @@ class Results:
 
         elements.append(Spacer(1, 12))
 
-        accuracy = accuracy_score(self.target_test, self._pred_test)
-        precision = precision_score(
-            self.target_test,
-            self._pred_test,
-            average="weighted"
-        )
-        recall = recall_score(
-            self.target_test,
-            self._pred_test,
-            average="weighted"
-        )
-        f1 = f1_score(
-            self.target_test,
-            self._pred_test,
-            average="weighted"
-        )
-
         elements.append(
-            Paragraph(f"Accuracy: {accuracy:.4f}", styles["BodyText"])
+            Paragraph(f"Accuracy: {self.accuracy:.4f}", styles["BodyText"])
         )
         elements.append(
-            Paragraph(f"Precision: {precision:.4f}", styles["BodyText"])
+            Paragraph(f"Precision: {self.precision:.4f}", styles["BodyText"])
         )
         elements.append(
-            Paragraph(f"Recall: {recall:.4f}", styles["BodyText"])
+            Paragraph(f"Recall: {self.recall:.4f}", styles["BodyText"])
         )
         elements.append(
-            Paragraph(f"F1 Score: {f1:.4f}", styles["BodyText"])
+            Paragraph(f"F1 Score: {self.f1:.4f}", styles["BodyText"])
         )
 
         elements.append(Spacer(1, 20))
