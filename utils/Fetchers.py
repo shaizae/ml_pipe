@@ -18,7 +18,7 @@ class Fetchers:
 
     def pop_index(self, index: list[int]):
         val = self._data[index, ...]
-        self._data = np.delete(self._data, index)
+        self._data = np.delete(self._data, index,axis=0)
         return val
 
     @property
@@ -31,10 +31,6 @@ class Fetchers:
         if new_data.shape[1] != self._data.shape[1]:
             raise ValueError("new data must have same shape as existing data")
         self._data = new_data
-
-    @property
-    def columns(self):
-        return self._columns
 
     @property
     def columns(self):
