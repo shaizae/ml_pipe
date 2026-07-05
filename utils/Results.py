@@ -8,7 +8,7 @@ import numpy as np
 from joblib import dump
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import Preformatted
+from reportlab.platypus import Preformatted, PageBreak
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_score, classification_report
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
@@ -216,7 +216,7 @@ class Results:
                 plt.savefig(roc_path, bbox_inches="tight")
                 plt.close()
 
-                elements.append(Spacer(1, 20))
+                elements.append(PageBreak())
                 elements.append(
                     Paragraph("ROC Curve", styles["Heading2"])
                 )

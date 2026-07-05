@@ -104,15 +104,10 @@ def test_use_more_fetchers_that_exist_in_fetcher_selection(classifier):
 def test_brut_force_features(classifier):
     original_models = len(classifier._train_data)
     n_features = classifier.fetchers.data.shape[1]
-
     expected_combinations = [combo for i in range(n_features) for combo in combinations(range(n_features), i)]
-
     classifier.brut_force_features()
-
     assert len(classifier._train_data) == (original_models * len(expected_combinations))
-
     produced = [tuple(td.featuresIndex) for td in classifier._train_data]
-
     for _ in range(original_models):
         for combo in expected_combinations:
             assert produced.count(combo) == original_models
