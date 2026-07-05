@@ -5,7 +5,9 @@ from tempfile import TemporaryDirectory
 
 import matplotlib.pyplot as plt
 import numpy as np
+from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Preformatted
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
@@ -15,24 +17,34 @@ from reportlab.platypus import (
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
-    f1_score, recall_score,
+    f1_score, recall_score, classification_report,
 )
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import label_binarize
 
+mono_style = ParagraphStyle(
+    "Mono",
+    fontName="Courier",
+    fontSize=8,
+    leading=10,
+)
+
 
 class Results:
-    def __init__(self, model):
+    def __init__(self, model, features_test, target_test):
         self.model = model
-        self.features_test = None
-        self.target_test = None
+        self._features_test = None
+        self._target_test = None
         self._pred_test = None
         self._predict_score = None
         self._accuracy: float = 0
         self._precision: float = 0
         self._recall: float = 0
         self._f1: float = 0
+        self._features_test = features_test
+        self._target_test = target_test
+        self.predict()
 
     @property
     def name(self):
@@ -54,10 +66,13 @@ class Results:
     def f1(self):
         return self._f1
 
-    def set_test(self, features_test, target_test):
-        self.features_test = features_test
-        self.target_test = target_test
-        self.predict()
+    @property
+    def features_test(self):
+        return self._features_test
+
+    @property
+    def target_test(self):
+        return self._target_test
 
     def predict(self):
         self._pred_test = self.model.predict(self.features_test)
@@ -131,18 +146,18 @@ class Results:
         # merge test features
         if result.features_test is not None:
             if self.features_test is None:
-                self.features_test = result.features_test.copy()
+                self._features_test = result.features_test.copy()
             else:
-                self.features_test = np.concatenate(
+                self._features_test = np.concatenate(
                     [self.features_test, result.features_test],
                     axis=0
                 )
 
         if result.target_test is not None:
             if self.target_test is None:
-                self.target_test = result.target_test.copy()
+                self._target_test = result.target_test.copy()
             else:
-                self.target_test = np.concatenate(
+                self._target_test = np.concatenate(
                     [self.target_test, result.target_test],
                     axis=0
                 )
@@ -169,7 +184,7 @@ class Results:
 
     def save_pdf_report(self, filename: str):
         filename = os.path.join(filename,
-                                f"report{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.pdf")
+                                f"report_{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.pdf")
         if self._pred_test is None:
             raise ValueError("No predictions available")
 
@@ -178,27 +193,20 @@ class Results:
         doc = SimpleDocTemplate(filename)
         elements = []
 
-        elements.append(
-            Paragraph(f"Classification Report - {self.name}",
-                      styles["Title"])
-        )
+        for line in self.report_lines():
+            if line == "":
+                elements.append(Spacer(1, 12))
+            else:
+                if isinstance(line, str):
+                    elements.append(Paragraph(line.replace("\n", "<br/>"), styles["BodyText"]))
+                else:
+                    elements.append(Paragraph(line, styles["BodyText"]))
 
         elements.append(Spacer(1, 12))
 
         elements.append(
-            Paragraph(f"Accuracy: {self.accuracy:.4f}", styles["BodyText"])
+            Preformatted(self.report_matrix(), mono_style)
         )
-        elements.append(
-            Paragraph(f"Precision: {self.precision:.4f}", styles["BodyText"])
-        )
-        elements.append(
-            Paragraph(f"Recall: {self.recall:.4f}", styles["BodyText"])
-        )
-        elements.append(
-            Paragraph(f"F1 Score: {self.f1:.4f}", styles["BodyText"])
-        )
-
-        elements.append(Spacer(1, 20))
 
         with TemporaryDirectory() as tmpdir:
 
@@ -229,3 +237,25 @@ class Results:
                 )
 
             doc.build(elements)
+
+    def __str__(self):
+        lines = list(self.report_lines())
+        return "\n".join(lines) + "\n\n" + self.report_matrix()
+
+    def report_lines(self):
+        """Yield all report lines."""
+        yield f"Classification Report - {self.name}"
+        yield ""
+
+        yield f"Accuracy : {self.accuracy:.4f}"
+        yield f"Precision: {self.precision:.4f}"
+        yield f"Recall   : {self.recall:.4f}"
+        yield f"F1 Score : {self.f1:.4f}"
+
+    def report_matrix(self, output_dict: bool = False) -> str | dict:
+        return classification_report(
+            self.target_test,
+            self._pred_test,
+            zero_division=0,
+            output_dict=output_dict,
+        )
