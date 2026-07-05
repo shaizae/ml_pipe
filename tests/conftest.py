@@ -47,3 +47,10 @@ def fetchers_with_data(iris_data):
     f = Fetchers()
     f.load_new_data(df)
     return f
+
+class DummyModel:
+    def predict(self, X):
+        return np.zeros(len(X))
+
+    def predict_proba(self, X):
+        return np.zeros((len(X), 2))

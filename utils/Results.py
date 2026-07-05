@@ -34,7 +34,7 @@ mono_style = ParagraphStyle(
 
 
 class Results:
-    def __init__(self, model, features_test, target_test):
+    def __init__(self, model):
         self.model = model
         self._features_test = None
         self._target_test = None
@@ -44,9 +44,7 @@ class Results:
         self._precision: float = 0
         self._recall: float = 0
         self._f1: float = 0
-        self._features_test = features_test
-        self._target_test = target_test
-        self.predict()
+
 
     @property
     def name(self):
@@ -140,6 +138,11 @@ class Results:
         plt.legend()
         if show:
             plt.show()
+
+    def set_test(self, features_test, target_test):
+        self._features_test = features_test
+        self._target_test = target_test
+        self.predict()
 
     def append_results(self, result: Results):
         """
@@ -261,12 +264,14 @@ class Results:
             zero_division=0,
             output_dict=output_dict,
         )
+
     def save_model(self, filename: str):
         filename = os.path.join(filename, f"model_{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}")
         self.model.save(filename)
+
     def save_results(self, path: str):
-        name=  f"{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
-        filename = os.path.join(path,name)
+        name = f"{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
+        filename = os.path.join(path, name)
         create_path(filename)
         self.save_pdf_report(filename)
         print(self)

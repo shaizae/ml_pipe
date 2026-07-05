@@ -20,7 +20,8 @@ def train(train_data: TrainData):
     if len(test_features.shape) == 2:
         test_features = test_features[:, train_data.featuresIndex]
     test_target = train_data.target.array[train_data.test_index]
-    result = Results(train_data.model,test_features,test_target)
+    result = Results(train_data.model)
+    result.set_test(test_features, test_target)
     if train_data.print:
         print(f"predicting results end whit model: {train_data.name}")
     return result
