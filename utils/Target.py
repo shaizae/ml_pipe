@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
@@ -7,9 +7,9 @@ from tqdm import trange
 
 class Target:
     def __init__(self):
-        self._data: np.ndarray = None
-        self.decrypt_map: dict[Any, int] = None
-        self._encoder: LabelEncoder = None
+        self._data: Optional[np.ndarray] = None
+        self.decrypt_map: Optional[dict[Any, int]] = None
+        self._encoder: Optional[LabelEncoder] = None
 
     def load_new_data(self, target: np.ndarray):
         self._encoder = LabelEncoder()

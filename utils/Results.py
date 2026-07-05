@@ -131,10 +131,6 @@ class Results:
         self.predict()
 
     def append_results(self, result: Results):
-        """
-        Merge another Results object into this one.
-        """
-        # merge test features
         if result.features_test is not None:
             if self.features_test is None:
                 self._features_test = result.features_test.copy()
@@ -177,12 +173,11 @@ class Results:
 
     def save_pdf_report(self, filename: str):
         filename = os.path.join(filename,
-                                f"report_{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.pdf")
+                                f"report_{self.name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf")
         if self._pred_test is None:
             raise ValueError("No predictions available")
 
         styles = getSampleStyleSheet()
-
         doc = SimpleDocTemplate(filename)
         elements = []
 
@@ -255,11 +250,11 @@ class Results:
 
     def save_model(self, filename: str):
         filename = os.path.join(filename,
-                                f"model_{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.joblib")
+                                f"model_{self.name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.joblib")
         dump(self.model, filename)
 
     def save_results(self, path: str):
-        name = f"{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
+        name = f"{self.name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
         filename = os.path.join(path, name)
         create_path(filename)
         self.save_pdf_report(filename)

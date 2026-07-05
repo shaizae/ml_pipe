@@ -1,1 +1,1 @@
-this is a sikit leanr pacage ror running meny test in multuy prossesing in minmum garbeg cration
+this is a scikit-learn package for running many tests in multiprocessing with minimal garbage creation

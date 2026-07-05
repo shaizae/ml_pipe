@@ -49,11 +49,11 @@ class Classification:
 
         train_index, test_index = train_test_split(
             np.arange(len(self.fetchers.data)), test_size=ratio)
-        targe = create_shared_numpy(self.targets.data, "targe")
+        target = create_shared_numpy(self.targets.data, "target")
         features = create_shared_numpy(self.fetchers.data, "features")
 
         for train_data in self._train_data:
-            train_data.set_features_and_targets(features, targe)
+            train_data.set_features_and_targets(features, target)
             train_data.print = True
             train_data.set_indexes(train_index, test_index)
         try:
