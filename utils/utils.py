@@ -2,6 +2,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from enum import StrEnum
 from multiprocessing import shared_memory
+from pathlib import Path
 from typing import Tuple, Any
 
 import numpy as np
@@ -114,3 +115,8 @@ class FilteringCriteria(StrEnum):
     f1 = "f1"
     recall = "recall"
     precision = "precision"
+
+def create_path(path: str) -> Path:
+    p = Path(path)
+    p.mkdir(parents=True, exist_ok=True)  # creates all missing folders
+    return p
