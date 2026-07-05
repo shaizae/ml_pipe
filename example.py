@@ -32,8 +32,8 @@ def main():
     test_class.fetchers.min_max_scaler()
     test_class.fetcher_selection(chi2,[1,2,3])
     test_class.train_test_split()
-    filterd_results=test_class.filter_by(FilteringCriteria.accuracy)
-    for i in filterd_results:
+    filtered_results=test_class.filter_by(FilteringCriteria.accuracy)
+    for i in filtered_results:
         i.save_results(r".\tests\pdf")
 
 
