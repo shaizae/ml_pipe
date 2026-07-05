@@ -5,32 +5,19 @@ from tempfile import TemporaryDirectory
 
 import matplotlib.pyplot as plt
 import numpy as np
+from joblib import dump
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Preformatted
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer,
-    Image,
-)
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    f1_score, recall_score, classification_report,
-)
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_score, classification_report
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import label_binarize
 
 from utils.utils import create_path
 
-mono_style = ParagraphStyle(
-    "Mono",
-    fontName="Courier",
-    fontSize=8,
-    leading=10,
-)
+mono_style = ParagraphStyle("Mono", fontName="Courier", fontSize=8, leading=10, )
 
 
 class Results:
@@ -44,7 +31,6 @@ class Results:
         self._precision: float = 0
         self._recall: float = 0
         self._f1: float = 0
-
 
     @property
     def name(self):
@@ -185,6 +171,8 @@ class Results:
                     axis=0
                 )
 
+        self.model = result.model
+
         return self
 
     def save_pdf_report(self, filename: str):
@@ -266,12 +254,14 @@ class Results:
         )
 
     def save_model(self, filename: str):
-        filename = os.path.join(filename, f"model_{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}")
-        self.model.save(filename)
+        filename = os.path.join(filename,
+                                f"model_{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.joblib")
+        dump(self.model, filename)
 
     def save_results(self, path: str):
         name = f"{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
         filename = os.path.join(path, name)
         create_path(filename)
         self.save_pdf_report(filename)
+        self.save_model(filename)
         print(self)
