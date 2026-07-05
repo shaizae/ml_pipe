@@ -259,4 +259,3 @@ class Results:
         create_path(filename)
         self.save_pdf_report(filename)
         self.save_model(filename)
-        print(self)
