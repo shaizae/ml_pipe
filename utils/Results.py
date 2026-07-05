@@ -176,8 +176,7 @@ class Results:
         return self
 
     def save_pdf_report(self, filename: str):
-        filename = os.path.join(filename,
-                                f"report_{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.pdf")
+        filename = os.path.join(            filename,            f"report_{self.name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"        )
         if self._pred_test is None:
             raise ValueError("No predictions available")
 
@@ -254,12 +253,11 @@ class Results:
         )
 
     def save_model(self, filename: str):
-        filename = os.path.join(filename,
-                                f"model_{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.joblib")
+        filename = os.path.join(            filename,            f"model_{self.name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.joblib"        )
         dump(self.model, filename)
 
     def save_results(self, path: str):
-        name = f"{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
+        name = f"{self.name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
         filename = os.path.join(path, name)
         create_path(filename)
         self.save_pdf_report(filename)
