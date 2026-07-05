@@ -34,8 +34,8 @@ def main():
     test_class.train_test_split()
     filterd_results=test_class.filter_by(FilteringCriteria.accuracy)
     for i in filterd_results:
-        i.save_pdf_report(r"C:\test")
-        print(i)
+        i.save_results(r"C:\test")
+
 
 
 if __name__ == '__main__':

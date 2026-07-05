@@ -23,6 +23,8 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import label_binarize
 
+from utils.utils import create_path
+
 mono_style = ParagraphStyle(
     "Mono",
     fontName="Courier",
@@ -259,3 +261,12 @@ class Results:
             zero_division=0,
             output_dict=output_dict,
         )
+    def save_model(self, filename: str):
+        filename = os.path.join(filename, f"model_{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}")
+        self.model.save(filename)
+    def save_results(self, path: str):
+        name=  f"{self.name}_{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}"
+        filename = os.path.join(path,name)
+        create_path(filename)
+        self.save_pdf_report(filename)
+        print(self)
