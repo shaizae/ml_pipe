@@ -1,4 +1,5 @@
 import os
+from itertools import combinations
 from multiprocessing.pool import Pool
 
 import numpy as np
@@ -16,6 +17,7 @@ from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, 
 
 class Classification:
     _process_limit = os.cpu_count()
+    random_state = None
 
     def __init__(self):
         self._results: list[Results] = None
@@ -77,7 +79,7 @@ class Classification:
             raise ValueError("n_splits must be less than dataset size")
 
         results = []
-        kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+        kf = KFold(n_splits=n_splits, shuffle=True, random_state=Classification.random_state)
 
         X_train = create_shared_numpy(self.fetchers.data, f"features")
         y_train = create_shared_numpy(self.targets.data, f"target")
@@ -149,3 +151,23 @@ class Classification:
     def filter_by(self, criteria: FilteringCriteria):
         max_value = max(getattr(result, criteria.value) for result in self._results)
         return [item for item in self._results if getattr(item, criteria.value) == max_value]
+
+    def brut_force_features(self):
+        number_of_features = range(self.fetchers.data.shape[1])
+        vec = np.array(number_of_features)
+        train_data_list = []
+
+        for train_data_class in tqdm(self._train_data, desc="adding features"):
+            all_combinations = _brut_force(vec)
+            for combination in all_combinations:
+                dummy_train_data = train_data_class.copy()
+                dummy_train_data.set_features_selection(indexes=combination)
+                train_data_list.append(dummy_train_data)
+
+        self._train_data = train_data_list
+
+
+def _brut_force(vec: np.ndarray):
+    for i in range(len(vec)):
+        for combo in combinations(vec, i):
+            yield combo

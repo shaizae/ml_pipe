@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.datasets import load_iris as DB
+from sklearn.datasets import load_digits as DB
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.feature_selection import chi2
 from sklearn.svm import SVC
@@ -32,8 +32,8 @@ def main():
     test_class.fetchers.min_max_scaler()
     test_class.fetcher_selection(chi2,[1,2,3])
     test_class.train_test_split()
-    filterd_results=test_class.filter_by(FilteringCriteria.accuracy)
-    for i in filterd_results:
+    filtered_results=test_class.filter_by(FilteringCriteria.accuracy)
+    for i in filtered_results:
         i.save_results(r".\tests\pdf")
 
 

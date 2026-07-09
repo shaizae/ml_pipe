@@ -1,4 +1,5 @@
 import os
+from itertools import combinations
 
 import pytest
 from sklearn.ensemble import RandomForestClassifier
@@ -79,9 +80,8 @@ def test_fetcher_selection_updates_train_data(classifier):
     classifier.process_limit(2)
     classifier.fetcher_selection(algorithm=chi2, number_of_features=number_of_features)
     assert len(classifier._train_data) == original_len * 2
-    for filtered,expected in zip(classifier._train_data,number_of_features):
+    for filtered, expected in zip(classifier._train_data, number_of_features):
         assert len(filtered.featuresIndex) == expected
-
 
 
 def test_set_accepts_numpy_target(iris_data):
@@ -94,10 +94,20 @@ def test_set_accepts_numpy_target(iris_data):
     assert cls.targets is not None
     assert len(cls._train_data) == 2
 
+
 def test_use_more_fetchers_that_exist_in_fetcher_selection(classifier):
     classifier.fetcher_selection(algorithm=chi2, number_of_features=[10, 20])
     for i in classifier._train_data:
-        assert len(i.featuresIndex) ==4
+        assert len(i.featuresIndex) == 4
 
 
-
+def test_brut_force_features(classifier):
+    original_models = len(classifier._train_data)
+    n_features = classifier.fetchers.data.shape[1]
+    expected_combinations = [combo for i in range(n_features) for combo in combinations(range(n_features), i)]
+    classifier.brut_force_features()
+    assert len(classifier._train_data) == (original_models * len(expected_combinations))
+    produced = [tuple(td.featuresIndex) for td in classifier._train_data]
+    for _ in range(original_models):
+        for combo in expected_combinations:
+            assert produced.count(combo) == original_models
