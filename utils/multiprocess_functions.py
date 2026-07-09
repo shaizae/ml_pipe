@@ -1,27 +1,33 @@
+import warnings
+
 import numpy as np
 from sklearn.feature_selection import SelectKBest
 
 from utils.Results import Results
-from utils.utils import TrainData, FeaturesSelectionsData
+from utils.utils import TrainData, FeaturesSelectionsData, SharedMemory, force_gc
+warnings.filterwarnings(
+    "ignore",
+    category=FutureWarning,
+    module="sklearn"
+)
+
+@force_gc
+def features_unpackage(shared_memory: SharedMemory, index: list[int], features_index: list[int]):
+    return shared_memory.array[index][..., features_index]
+
 
 
 def train(train_data: TrainData):
     if train_data.print:
         print(f"train start whit model: {train_data.name}")
-    train_features = train_data.features.array[train_data.train_index]
-    if len(train_features.shape) == 2:
-        train_features = train_features[:, train_data.featuresIndex]
-    train_target = train_data.target.array[train_data.train_index]
-    train_data(train_features, train_target)
+    train_data(features_unpackage(train_data.features, train_data.train_index, train_data.featuresIndex),
+               train_data.target.array[train_data.train_index])
     if train_data.print:
         print(f"train end whit model: {train_data.name}")
 
-    test_features = train_data.features.array[train_data.test_index]
-    if len(test_features.shape) == 2:
-        test_features = test_features[:, train_data.featuresIndex]
-    test_target = train_data.target.array[train_data.test_index]
     result = Results(train_data.model)
-    result.set_test(test_features, test_target)
+    result.set_test(features_unpackage(train_data.features, train_data.test_index, train_data.featuresIndex),
+                    train_data.target.array[train_data.test_index])
     if train_data.print:
         print(f"predicting results end whit model: {train_data.name}")
     return result

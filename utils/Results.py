@@ -1,5 +1,6 @@
 import datetime
 import os.path
+from functools import cache
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -8,14 +9,14 @@ import numpy as np
 from joblib import dump
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import Preformatted, PageBreak
+from reportlab.platypus import Preformatted
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_score, classification_report
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import label_binarize
 
-from utils.utils import create_path
+from utils.utils import create_path, FilteringCriteria
 
 mono_style = ParagraphStyle("Mono", fontName="Courier", fontSize=8, leading=10, )
 
@@ -54,10 +55,14 @@ class Results:
 
     @property
     def features_test(self):
+        if self._features_test is None:
+            return None
         return self._features_test
 
     @property
     def target_test(self):
+        if self._target_test is None:
+            return None
         return self._target_test
 
     def predict(self):
@@ -70,6 +75,7 @@ class Results:
         self._precision = precision_score(self.target_test, self._pred_test, average="weighted")
         self._recall = recall_score(self.target_test, self._pred_test, average="weighted")
         self._f1 = f1_score(self.target_test, self._pred_test, average="weighted")
+        self._features_test=None
 
     def plot_confusion_matrix(self, labels=None, normalize=None, show: bool = True):
         """
@@ -216,7 +222,7 @@ class Results:
                 plt.savefig(roc_path, bbox_inches="tight")
                 plt.close()
 
-                elements.append(PageBreak())
+                elements.append(Spacer(1, 20))
                 elements.append(
                     Paragraph("ROC Curve", styles["Heading2"])
                 )
@@ -240,12 +246,13 @@ class Results:
         yield f"Recall   : {self.recall:.4f}"
         yield f"F1 Score : {self.f1:.4f}"
 
-    def report_matrix(self, output_dict: bool = False) -> str | dict:
+
+    def report_matrix(self) -> str | dict:
         return classification_report(
             self.target_test,
             self._pred_test,
             zero_division=0,
-            output_dict=output_dict,
+            output_dict=False,
         )
 
     def save_model(self, filename: str):
@@ -259,3 +266,20 @@ class Results:
         create_path(filename)
         self.save_pdf_report(filename)
         self.save_model(filename)
+        print(self)
+def test_filter_by_returns_best(classifier):
+    r1 = Results(None)
+    r1.accuracy = 0.7
+
+    r2 = Results(None)
+    r2.accuracy = 0.9
+
+    classifier._results = [r1, r2]
+
+    result = classifier.filter_by(FilteringCriteria.ACCURACY)
+
+    assert result == [r2]
+
+def test_results_property(classifier):
+    classifier._results = [1, 2, 3]
+    assert classifier.results == [1, 2, 3]
