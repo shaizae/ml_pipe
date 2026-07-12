@@ -56,7 +56,7 @@ class Classification:
         train_data = self._train_test_split_generator(ratio, features, target)
 
         try:
-            with Pool(processes=self._process_limit, maxtasksperchild=1) as pool:
+            with Pool(processes=self._process_limit) as pool:
                 self._results = list(pool.imap_unordered(train, train_data))
 
         except Exception as e:

@@ -20,7 +20,7 @@ class SharedMemory:
         self.shape = shape
         self.dtype = dtype
 
-        SharedMemory._shms.append(self)
+        SharedMemory.add(self)
 
     def unlink(self):
         self.shm.close()
@@ -61,9 +61,7 @@ def create_shared_numpy(arr: np.ndarray, name: str) -> SharedMemory:
     memory = shared_memory.SharedMemory(create=True, size=arr.nbytes, name=name)
     shared_array = np.ndarray(arr.shape, dtype=arr.dtype, buffer=memory.buf)
     shared_array[:] = arr[:]
-    SharedMemory.add(memory)
     shared = SharedMemory(memory=memory, shape=arr.shape, dtype=arr.dtype)
-    SharedMemory.add(shared)
     return shared
 
 

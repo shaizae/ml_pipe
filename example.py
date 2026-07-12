@@ -11,7 +11,7 @@ from utils.utils import FilteringCriteria
 
 def main():
     k_folds()
-    # train_test_split()
+    train_test_split()
 
 
 def train_test_split():
@@ -31,7 +31,7 @@ def train_test_split():
     }
     y = pd.Series(data.target).map(target_names)
     test_class = Classification()
-    test_class.process_limit(5)
+    test_class.process_limit(15)
 
     test_class.set(X, y, [RandomForestClassifier(), AdaBoostClassifier(), DecisionTreeClassifier(), SVC()])
     test_class.fetchers.min_max_scaler()
@@ -59,7 +59,7 @@ def k_folds():
     }
     y = pd.Series(data.target).map(target_names)
     test_class = Classification()
-    test_class.process_limit(20)
+    test_class.process_limit(15)
 
     test_class.set(X, y, [RandomForestClassifier(), AdaBoostClassifier(), DecisionTreeClassifier(), SVC()])
     test_class.fetchers.min_max_scaler()
