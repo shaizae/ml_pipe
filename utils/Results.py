@@ -1,6 +1,5 @@
 import datetime
 import os.path
-from functools import cache
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -16,7 +15,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import label_binarize
 
-from utils.utils import create_path, FilteringCriteria
+from utils.utils import create_path
 
 mono_style = ParagraphStyle("Mono", fontName="Courier", fontSize=8, leading=10, )
 
@@ -75,7 +74,7 @@ class Results:
         self._precision = precision_score(self.target_test, self._pred_test, average="weighted")
         self._recall = recall_score(self.target_test, self._pred_test, average="weighted")
         self._f1 = f1_score(self.target_test, self._pred_test, average="weighted")
-        self._features_test=None
+        self._features_test = None
 
     def plot_confusion_matrix(self, labels=None, normalize=None, show: bool = True):
         """
@@ -246,7 +245,6 @@ class Results:
         yield f"Recall   : {self.recall:.4f}"
         yield f"F1 Score : {self.f1:.4f}"
 
-
     def report_matrix(self) -> str | dict:
         return classification_report(
             self.target_test,
@@ -267,19 +265,5 @@ class Results:
         self.save_pdf_report(filename)
         self.save_model(filename)
         print(self)
-def test_filter_by_returns_best(classifier):
-    r1 = Results(None)
-    r1.accuracy = 0.7
 
-    r2 = Results(None)
-    r2.accuracy = 0.9
 
-    classifier._results = [r1, r2]
-
-    result = classifier.filter_by(FilteringCriteria.ACCURACY)
-
-    assert result == [r2]
-
-def test_results_property(classifier):
-    classifier._results = [1, 2, 3]
-    assert classifier.results == [1, 2, 3]
