@@ -18,7 +18,7 @@ from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, 
 
 
 class Classification:
-    _process_limit:int = int(0.8*os.cpu_count())
+    _process_limit: int = int(0.8 * os.cpu_count() )
     random_state = None
 
     def __init__(self):
@@ -77,7 +77,7 @@ class Classification:
             yield train_data
 
     @cleanup_shared_memory
-    def k_folds(self, n_splits: int = 5,shuffle:bool=True):
+    def k_folds(self, n_splits: int = 5, shuffle: bool = True):
         if n_splits <= 1:
             raise ValueError("n_splits must be greater than 1")
 
@@ -90,12 +90,12 @@ class Classification:
         y_train = create_shared_numpy(self.targets.data, f"target")
 
         for train_data in self._train_data:
-            train_inputs = self._k_fold_generator(train_data,kf, X_train, y_train)
+            train_inputs = self._k_fold_generator(train_data, kf, X_train, y_train)
             try:
                 with Pool(processes=self._process_limit) as pool:
                     model_results = list(tqdm(pool.imap_unordered(train, train_inputs)))
                 final_result = Results(train_data.model)
-                for result in tqdm(model_results,desc="uniting_folds"):
+                for result in tqdm(model_results, desc="uniting_folds"):
                     final_result.append_results(result)
                 results.append(final_result)
             except Exception as e:
@@ -104,7 +104,7 @@ class Classification:
         self._results = results
         return results
 
-    def _k_fold_generator(self,train_data:TrainData,kf:KFold,X_train:SharedMemory,y_train:SharedMemory):
+    def _k_fold_generator(self, train_data: TrainData, kf: KFold, X_train: SharedMemory, y_train: SharedMemory):
         train_data.set_features_and_targets(X_train, y_train)
         for (train_index, test_index) in kf.split(self.fetchers.data):
             train_inputs = train_data.copy()
