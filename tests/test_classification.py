@@ -1,12 +1,15 @@
 import os
 from itertools import combinations
+from unittest.mock import patch
 
 import pytest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import chi2
+from sklearn.model_selection import KFold
 from sklearn.svm import SVC
 
 from classificetin_files.Classificetion import Classification
+from utils.utils import create_shared_numpy
 
 
 def test_set_initializes_data(classifier):
@@ -46,7 +49,6 @@ def test_train_test_split_ratio_too_large(classifier, ratio):
 
 def test_train_test_split_runs(classifier):
     results = classifier.train_test_split(0.8)
-
     assert len(results) == 2
 
 
@@ -64,7 +66,6 @@ def test_k_folds_invalid_splits_too_large(classifier):
 
 def test_k_folds_runs(classifier):
     results = classifier.k_folds(3)
-
     assert len(results) == 2
 
 
@@ -77,7 +78,6 @@ def test_leave_one_out_runs(classifier):
 def test_fetcher_selection_updates_train_data(classifier):
     number_of_features = [1, 2]
     original_len = len(classifier._train_data)
-    classifier.process_limit(2)
     classifier.fetcher_selection(algorithm=chi2, number_of_features=number_of_features)
     assert len(classifier._train_data) == original_len * 2
     for filtered, expected in zip(classifier._train_data, number_of_features):
@@ -111,3 +111,61 @@ def test_brut_force_features(classifier):
     for _ in range(original_models):
         for combo in expected_combinations:
             assert produced.count(combo) == original_models
+
+
+def test_train_test_split_generator(classifier):
+    x = create_shared_numpy(classifier.fetchers.data, "x")
+    y = create_shared_numpy(classifier.targets.data, "y")
+
+    data = list(classifier._train_test_split_generator(0.8, x, y))
+
+    assert len(data) == len(classifier._train_data)
+
+    for td in data:
+        assert td.train_index is not None
+        assert td.test_index is not None
+
+
+def test_k_fold_generator(classifier, iris_data):
+    x, y = iris_data
+    td = classifier._train_data[0]
+
+    kf = KFold(3)
+
+    folds = list(classifier._k_fold_generator(td, kf, x, y))
+
+    assert len(folds) == 3
+
+
+def test_train_test_split_exception(classifier):
+    with patch(
+            "classificetin_files.Classificetion.Pool",
+            side_effect=RuntimeError("boom")
+    ):
+        with pytest.raises(RuntimeError):
+            classifier.train_test_split()
+
+
+def test_k_folds_exception(classifier):
+    with patch("classificetin_files.Classificetion.Pool", side_effect=RuntimeError("boom"), ):
+        results = classifier.k_folds(3)
+
+    assert results == []
+    assert classifier.results == []
+
+
+def test_fetcher_selection_exception(classifier):
+    with patch(
+            "classificetin_files.Classificetion.Pool",
+            side_effect=RuntimeError("boom"),
+    ):
+        with pytest.raises(RuntimeError, match="boom"):
+            classifier.fetcher_selection(
+                algorithm=chi2,
+                number_of_features=[1, 2],
+            )
+
+
+def test_k_folds_no_shuffle(classifier):
+    results = classifier.k_folds(3, shuffle=False)
+    assert len(results) == 2

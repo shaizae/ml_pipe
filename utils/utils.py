@@ -1,6 +1,8 @@
+import gc
 from copy import deepcopy
 from dataclasses import dataclass
 from enum import StrEnum
+from functools import wraps
 from multiprocessing import shared_memory
 from pathlib import Path
 from typing import Tuple, Any
@@ -18,7 +20,7 @@ class SharedMemory:
         self.shape = shape
         self.dtype = dtype
 
-        SharedMemory._shms.append(self)
+        SharedMemory.add(self)
 
     def unlink(self):
         self.shm.close()
@@ -59,9 +61,7 @@ def create_shared_numpy(arr: np.ndarray, name: str) -> SharedMemory:
     memory = shared_memory.SharedMemory(create=True, size=arr.nbytes, name=name)
     shared_array = np.ndarray(arr.shape, dtype=arr.dtype, buffer=memory.buf)
     shared_array[:] = arr[:]
-    SharedMemory.add(memory)
     shared = SharedMemory(memory=memory, shape=arr.shape, dtype=arr.dtype)
-    SharedMemory.add(shared)
     return shared
 
 
@@ -120,3 +120,22 @@ def create_path(path: str) -> Path:
     p = Path(path)
     p.mkdir(parents=True, exist_ok=True)  # creates all missing folders
     return p
+
+def force_gc(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        finally:
+            gc.collect()
+    return wrapper
+
+def cleanup_shared_memory(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        finally:
+            SharedMemory.cleanup()
+
+    return wrapper
