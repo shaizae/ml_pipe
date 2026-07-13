@@ -18,7 +18,7 @@ from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, 
 
 
 class Classification:
-    _process_limit = os.cpu_count()
+    _process_limit:int = int(0.8*os.cpu_count())
     random_state = None
 
     def __init__(self):

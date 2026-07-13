@@ -78,7 +78,6 @@ def test_leave_one_out_runs(classifier):
 def test_fetcher_selection_updates_train_data(classifier):
     number_of_features = [1, 2]
     original_len = len(classifier._train_data)
-    classifier.process_limit(2)
     classifier.fetcher_selection(algorithm=chi2, number_of_features=number_of_features)
     assert len(classifier._train_data) == original_len * 2
     for filtered, expected in zip(classifier._train_data, number_of_features):
@@ -127,7 +126,7 @@ def test_train_test_split_generator(classifier):
         assert td.test_index is not None
 
 
-def test_k_fold_generator(classifier,iris_data):
+def test_k_fold_generator(classifier, iris_data):
     x, y = iris_data
     td = classifier._train_data[0]
 
@@ -148,11 +147,7 @@ def test_train_test_split_exception(classifier):
 
 
 def test_k_folds_exception(classifier):
-    with patch(
-            "classificetin_files.Classificetion.Pool",
-            side_effect=RuntimeError("boom"),
-    ):
-        # k_folds catches the exception instead of re-raising it
+    with patch("classificetin_files.Classificetion.Pool", side_effect=RuntimeError("boom"), ):
         results = classifier.k_folds(3)
 
     assert results == []
