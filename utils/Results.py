@@ -245,7 +245,7 @@ class Results:
         yield f"Recall   : {self.recall:.4f}"
         yield f"F1 Score : {self.f1:.4f}"
 
-    def report_matrix(self) -> str | dict:
+    def report_matrix(self) -> str :
         return classification_report(
             self.target_test,
             self._pred_test,
