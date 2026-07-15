@@ -18,7 +18,7 @@ from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, 
 
 
 class Classification:
-    _process_limit: int = int(0.8 * os.cpu_count() )
+    _process_limit: int = int(0.8 * os.cpu_count())
     random_state = None
 
     def __init__(self):
@@ -122,13 +122,10 @@ class Classification:
         fetchers = create_shared_numpy(self.fetchers.pop_index(train_index), "fetchers")
         target = create_shared_numpy(self.targets.pop_index(train_index), "target")
 
-        features_selections_data = [
-            FeaturesSelectionsData(algorithm=algorithm, features=fetchers, target=target, number_of_features=number) for
-            number in number_of_features]
+        features_selections_data = self.fetcher_selection_generator(algorithm, number_of_features, fetchers, target)
         try:
             with Pool(processes=self._process_limit) as pool:
-                runner = pool.map_async(features_selections, features_selections_data)
-                results = runner.get()
+                results = list(tqdm(pool.imap_unordered(train, features_selections_data)))
         except Exception as e:
             print(f"fetcher selection fail error={e}")
             raise e
@@ -139,6 +136,12 @@ class Classification:
                 dummy_train_data.set_features_selection(indexes=number)
                 train_data_list.append(dummy_train_data)
         self._train_data = train_data_list
+
+    def fetcher_selection_generator(self, algorithm: BaseEstimator, number_of_features: list[int],
+                                    features: SharedMemory, target: SharedMemory):
+        for number in number_of_features:
+            yield FeaturesSelectionsData(algorithm=algorithm, features=features, target=target,
+                                         number_of_features=number)
 
     @property
     def results(self):
