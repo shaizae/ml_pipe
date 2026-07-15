@@ -125,7 +125,7 @@ class Classification:
         features_selections_data = self.fetcher_selection_generator(algorithm, number_of_features, fetchers, target)
         try:
             with Pool(processes=self._process_limit) as pool:
-                results = list(tqdm(pool.imap_unordered(train, features_selections_data)))
+                results = list(tqdm(pool.imap_unordered(features_selections, features_selections_data)))
         except Exception as e:
             print(f"fetcher selection fail error={e}")
             raise e
