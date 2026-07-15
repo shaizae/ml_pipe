@@ -143,14 +143,14 @@ class TestAppendResultsFullMerge:
         )
 def test_filter_by_returns_best(classifier):
     r1 = Results(None)
-    r1.accuracy = 0.7
+    r1._accuracy = 0.7
 
     r2 = Results(None)
-    r2.accuracy = 0.9
+    r2._accuracy = 0.9
 
     classifier._results = [r1, r2]
 
-    result = classifier.filter_by(FilteringCriteria.ACCURACY)
+    result = classifier.filter_by(FilteringCriteria.accuracy)
 
     assert result == [r2]
 
