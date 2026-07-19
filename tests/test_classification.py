@@ -80,8 +80,13 @@ def test_fetcher_selection_updates_train_data(classifier):
     original_len = len(classifier._train_data)
     classifier.fetcher_selection(algorithm=chi2, number_of_features=number_of_features)
     assert len(classifier._train_data) == original_len * 2
-    for filtered, expected in zip(classifier._train_data, number_of_features):
-        assert len(filtered.featuresIndex) == expected
+    res = dict()
+    for filter in classifier._train_data:
+        if filter.name not in res:
+            res[filter.name] = []
+        res[filter.name].append(len(filter.featuresIndex))
+    for key in res.keys():
+        assert sorted(res[key]) == [1, 2]
 
 
 def test_set_accepts_numpy_target(iris_data):
