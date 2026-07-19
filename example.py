@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from sklearn.datasets import fetch_covtype as DB
+from sklearn.datasets import load_iris as DB
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.feature_selection import chi2
 from sklearn.svm import SVC
@@ -11,15 +11,14 @@ from utils.utils import FilteringCriteria
 
 
 def main():
-    k_folds()
     train_test_split()
+    k_folds()
 
 
 def train_test_split():
     data = DB()
     feature_names = data.feature_names
 
-    # Create DataFrame for features
     X = pd.DataFrame(data.data, columns=feature_names)
     X = X.astype(np.float32)
     target_names = {

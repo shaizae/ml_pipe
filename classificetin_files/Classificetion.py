@@ -18,7 +18,7 @@ from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, 
 
 
 class Classification:
-    _process_limit: int = int(0.85 * os.cpu_count())
+    _process_limit: int = max(1, os.cpu_count() // 2)
     random_state = None
 
     def __init__(self):
@@ -56,8 +56,10 @@ class Classification:
         train_data = self._train_test_split_generator(ratio, features, target)
 
         try:
-            with Pool(processes=self._process_limit) as pool:
-                self._results = list(pool.imap_unordered(train_test_split_mc, train_data))
+            with Pool(processes=self._process_limit, maxtasksperchild=20) as pool:
+                self._results = list(
+                    tqdm(pool.imap_unordered(train_test_split_mc, train_data), total=len(self._train_data),
+                         desc="training"))
 
         except Exception as e:
             print(f"training fail error={e}")
@@ -87,8 +89,10 @@ class Classification:
         y_train = create_shared_numpy(self.targets.data, f"target")
         train_inputs = self._k_fold_generator(n_splits, X_train, y_train, shuffle)
         try:
-            with Pool(processes=self._process_limit) as pool:
-                self._results = list(tqdm(pool.imap_unordered(train_k_folds_mc, train_inputs)))
+            with Pool(processes=self._process_limit, maxtasksperchild=20) as pool:
+                self._results = list(
+                    tqdm(pool.imap_unordered(train_k_folds_mc, train_inputs), total=len(self._train_data),
+                         desc="training"))
         except Exception as e:
             print(f"training fail error={e}")
             raise e
@@ -97,8 +101,8 @@ class Classification:
     def _k_fold_generator(self, kf: int, X_train: SharedMemory, y_train: SharedMemory, shuffle: bool):
         for train_data in self._train_data:
             train_data.set_features_and_targets(X_train, y_train)
-            yield KFoldsTrainData.set_from_train_data(train_data, number_of_folds=kf, shuffle=shuffle,randon_state= Classification.random_state)
-
+            yield KFoldsTrainData.set_from_train_data(train_data, number_of_folds=kf, shuffle=shuffle,
+                                                      randon_state=Classification.random_state)
 
     def leave_one_out(self):
         return self.k_folds(n_splits=len(self.targets.data))
@@ -113,8 +117,9 @@ class Classification:
         features_selections_data = Classification.fetcher_selection_generator(algorithm, number_of_features, fetchers,
                                                                               target)
         try:
-            with Pool(processes=self._process_limit) as pool:
-                results = list(tqdm(pool.imap_unordered(features_selections, features_selections_data)))
+            with Pool(processes=self._process_limit, maxtasksperchild=20) as pool:
+                results = list(tqdm(pool.imap_unordered(features_selections, features_selections_data),
+                                    total=len(number_of_features), desc="fetcher selection"))
         except Exception as e:
             print(f"fetcher selection fail error={e}")
             raise e
