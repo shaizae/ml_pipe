@@ -6,15 +6,15 @@ from typing import Generator
 import numpy as np
 from pandas import DataFrame, Series
 from sklearn.base import BaseEstimator
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 from utils.Fetchers import Fetchers
 from utils.Results import Results
 from utils.Target import Target
-from utils.multiprocess_functions import train, features_selections
+from utils.multiprocess_functions import train_test_split_mc, features_selections, train_k_folds_mc
 from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, SharedMemory, FilteringCriteria, \
-    cleanup_shared_memory
+    cleanup_shared_memory, KFoldsTrainData
 
 
 class Classification:
@@ -57,7 +57,7 @@ class Classification:
 
         try:
             with Pool(processes=self._process_limit) as pool:
-                self._results = list(pool.imap_unordered(train, train_data))
+                self._results = list(pool.imap_unordered(train_test_split_mc, train_data))
 
         except Exception as e:
             print(f"training fail error={e}")
@@ -72,7 +72,6 @@ class Classification:
 
         for train_data in self._train_data:
             train_data.set_features_and_targets(features, target)
-            train_data.print = True
             train_data.set_indexes(train_index, test_index)
             yield train_data
 
@@ -84,45 +83,35 @@ class Classification:
         if n_splits > len(self.targets.data):
             raise ValueError("n_splits must be less than dataset size")
 
-        results = []
-        kf = KFold(n_splits=n_splits, shuffle=shuffle, random_state=Classification.random_state)
         X_train = create_shared_numpy(self.fetchers.data, f"features")
         y_train = create_shared_numpy(self.targets.data, f"target")
+        train_inputs = self._k_fold_generator(n_splits, X_train, y_train, shuffle)
+        try:
+            with Pool(processes=self._process_limit) as pool:
+                self._results = list(tqdm(pool.imap_unordered(train_k_folds_mc, train_inputs)))
+        except Exception as e:
+            print(f"training fail error={e}")
+            raise e
+        return self._results
 
+    def _k_fold_generator(self, kf: int, X_train: SharedMemory, y_train: SharedMemory, shuffle: bool):
         for train_data in self._train_data:
-            train_inputs = self._k_fold_generator(train_data, kf, X_train, y_train)
-            try:
-                with Pool(processes=self._process_limit) as pool:
-                    model_results = list(tqdm(pool.imap_unordered(train, train_inputs)))
-                final_result = Results(train_data.model)
-                for result in tqdm(model_results, desc="uniting_folds"):
-                    final_result.append_results(result)
-                results.append(final_result)
-            except Exception as e:
-                print(f"training fail error={e}")
+            train_data.set_features_and_targets(X_train, y_train)
+            yield KFoldsTrainData.set_from_train_data(train_data, number_of_folds=kf, shuffle=shuffle)
 
-        self._results = results
-        return results
-
-    def _k_fold_generator(self, train_data: TrainData, kf: KFold, X_train: SharedMemory, y_train: SharedMemory):
-        train_data.set_features_and_targets(X_train, y_train)
-        for (train_index, test_index) in kf.split(self.fetchers.data):
-            train_inputs = train_data.copy()
-            train_inputs.set_indexes(train_index, test_index)
-            yield train_inputs
 
     def leave_one_out(self):
         return self.k_folds(n_splits=len(self.targets.data))
 
     @cleanup_shared_memory
     def fetcher_selection(self, algorithm: BaseEstimator, number_of_features: list[int]):
-        _, train_index = train_test_split(
-            np.arange(len(self.fetchers.data)), test_size=0.1)
+        _, train_index = train_test_split(np.arange(len(self.fetchers.data)), test_size=0.1)
 
         fetchers = create_shared_numpy(self.fetchers.pop_index(train_index), "fetchers")
         target = create_shared_numpy(self.targets.pop_index(train_index), "target")
 
-        features_selections_data = self.fetcher_selection_generator(algorithm, number_of_features, fetchers, target)
+        features_selections_data = Classification.fetcher_selection_generator(algorithm, number_of_features, fetchers,
+                                                                              target)
         try:
             with Pool(processes=self._process_limit) as pool:
                 results = list(tqdm(pool.imap_unordered(features_selections, features_selections_data)))
@@ -137,7 +126,8 @@ class Classification:
                 train_data_list.append(dummy_train_data)
         self._train_data = train_data_list
 
-    def fetcher_selection_generator(self, algorithm: BaseEstimator, number_of_features: list[int],
+    @staticmethod
+    def fetcher_selection_generator(algorithm: BaseEstimator, number_of_features: list[int],
                                     features: SharedMemory, target: SharedMemory):
         for number in number_of_features:
             yield FeaturesSelectionsData(algorithm=algorithm, features=features, target=target,

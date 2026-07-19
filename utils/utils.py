@@ -1,6 +1,6 @@
 import gc
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from enum import StrEnum
 from functools import wraps
 from multiprocessing import shared_memory
@@ -97,9 +97,28 @@ class TrainData:
     def set_features_selection(self, indexes: list[int]):
         self.featuresIndex = indexes
 
-    def __call__(self, train_features: np.ndarray, train_target: np.ndarray):
+    def fit(self, train_features: np.ndarray, train_target: np.ndarray):
         self.model.fit(train_features, train_target)
         return self.model
+
+    def __iter__(self):
+        for field in fields(self):
+            yield field.name, getattr(self, field.name)
+
+
+@dataclass(slots=True)
+class KFoldsTrainData(TrainData):
+    number_of_folds: int = 0
+    shuffle: bool = True
+
+    @staticmethod
+    def set_from_train_data(train_data: TrainData, number_of_folds: int, shuffle: bool):
+        to_return = KFoldsTrainData(train_data)
+        for key, value in train_data:
+            setattr(to_return, key, value)
+        to_return.number_of_folds = number_of_folds
+        to_return.shuffle = shuffle
+        return to_return
 
 
 @dataclass(slots=True)
@@ -116,25 +135,33 @@ class FilteringCriteria(StrEnum):
     recall = "recall"
     precision = "precision"
 
+
 def create_path(path: str) -> Path:
     p = Path(path)
     p.mkdir(parents=True, exist_ok=True)  # creates all missing folders
     return p
+
 
 def force_gc(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
+        except Exception as e:
+            raise e
         finally:
             gc.collect(2)
+
     return wrapper
+
 
 def cleanup_shared_memory(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
+        except Exception as e:
+            raise e
         finally:
             SharedMemory.cleanup()
 

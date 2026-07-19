@@ -11,7 +11,7 @@ from utils.utils import FilteringCriteria
 
 def main():
     k_folds()
-    train_test_split()
+    # train_test_split()
 
 
 def train_test_split():
