@@ -8,7 +8,7 @@ from sklearn.feature_selection import chi2
 from sklearn.svm import SVC
 
 from classificetin_files.Classificetion import Classification
-from utils.utils import create_shared_numpy, KFoldsTrainData
+from utils.utils import create_shared_numpy, KFoldsTrainData, cleanup_shared_memory
 
 
 def test_set_initializes_data(classifier):
@@ -116,7 +116,7 @@ def test_brut_force_features(classifier):
         for combo in expected_combinations:
             assert produced.count(combo) == original_models
 
-
+@cleanup_shared_memory
 def test_train_test_split_generator(classifier):
     x = create_shared_numpy(classifier.fetchers.data, "x")
     y = create_shared_numpy(classifier.targets.data, "y")
@@ -129,7 +129,7 @@ def test_train_test_split_generator(classifier):
         assert td.train_index is not None
         assert td.test_index is not None
 
-
+@cleanup_shared_memory
 def test_k_fold_generator(classifier, iris_data):
     x, y = iris_data
     x=create_shared_numpy(x.values, "x")
