@@ -19,6 +19,7 @@ from utils.utils import create_path, ValidationType
 
 mono_style = ParagraphStyle("Mono", fontName="Courier", fontSize=8, leading=10, )
 
+
 class Results:
     def __init__(self, model):
         self.model = model
@@ -206,9 +207,8 @@ class Results:
 
         elements.append(Spacer(1, 12))
 
-        elements.append(
-            Preformatted(self.report_matrix(), mono_style)
-        )
+        elements.append(Preformatted(self.report_matrix(), mono_style))
+        elements.append(Preformatted(f"validation type: {self.validation}", mono_style))
 
         with TemporaryDirectory() as tmpdir:
 
