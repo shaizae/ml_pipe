@@ -105,14 +105,6 @@ class TrainData:
         self.model.fit(train_features, train_target)
         return self.model
 
-    def get_train(self):
-        return features_unpackage(self.features, self.train_index, self.featuresIndex), self.target.array[
-            self.train_index]
-
-    def get_test(self):
-        return features_unpackage(self.features, self.test_index, self.featuresIndex), self.target.array[
-            self.test_index]
-
     def __iter__(self):
         for field in fields(self):
             yield field.name, getattr(self, field.name)
