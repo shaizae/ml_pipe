@@ -1,5 +1,6 @@
+import numpy as np
 import pandas as pd
-from sklearn.datasets import load_iris as DB
+from sklearn.datasets import fetch_covtype as DB
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.feature_selection import chi2
 from sklearn.svm import SVC
@@ -20,6 +21,7 @@ def train_test_split():
 
     # Create DataFrame for features
     X = pd.DataFrame(data.data, columns=feature_names)
+    X = X.astype(np.float32)
     target_names = {
         1: "Spruce/Fir",
         2: "Lodgepole Pine",
@@ -47,6 +49,7 @@ def k_folds():
 
     # Create DataFrame for features
     X = pd.DataFrame(data.data, columns=feature_names)
+    X = X.astype(np.float32)
     target_names = {
         1: "Spruce/Fir",
         2: "Lodgepole Pine",
