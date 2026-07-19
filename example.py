@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 from sklearn.datasets import load_iris as DB
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
