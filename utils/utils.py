@@ -134,6 +134,10 @@ class FeaturesSelectionsData:
     target: SharedMemory
     number_of_features: int
 
+class ValidationType(StrEnum):
+    train_test_split = "train_test_split"
+    k_folds= "k_folds"
+    leave_one_out = "leave_one_out"
 
 class FilteringCriteria(StrEnum):
     accuracy = "accuracy"

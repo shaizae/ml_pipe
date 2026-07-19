@@ -15,6 +15,27 @@ from classificetin_files.Classificetion import Classification
 from utils.utils import create_shared_numpy
 import numpy as np
 
+RANDOM_STATE = 42
+
+N_ESTIMATORS = 10
+
+SPLIT_TRAIN_SIZE = 100
+SPLIT_TEST_SIZE = 50
+
+K_FOLDS = 5
+LEAVE_ONE_OUT_FOLDS = 150
+
+SELECTED_FEATURES = 2
+ALL_FEATURES = 10
+
+FEATURE_INDEXES = [0, 1, 2, 3]
+
+IRIS_FEATURE_COUNT = 4
+IRIS_SAMPLES = 150
+
+TEST_ARRAY_SHAPE = (5, 4)
+TEST_ARRAY_SIZE = 20
+
 
 @pytest.fixture
 def iris_data():
@@ -23,6 +44,12 @@ def iris_data():
     y = pd.Series(data.target)
     return X, y
 
+@pytest.fixture
+def iris_data_sherd_memory():
+    data = load_iris()
+    X=create_shared_numpy(data.data, "fetchers")
+    y=create_shared_numpy(data.target, "target")
+    return X, y
 
 @pytest.fixture
 def classifier(iris_data):
@@ -55,3 +82,23 @@ class DummyModel:
 
     def predict_proba(self, X):
         return np.zeros((len(X), 2))
+
+
+@pytest.fixture
+def logistic_model():
+    from sklearn.linear_model import LogisticRegression
+
+    return LogisticRegression(
+        max_iter=500,
+        random_state=RANDOM_STATE
+    )
+
+
+@pytest.fixture
+def train_indexes():
+    return list(range(SPLIT_TRAIN_SIZE))
+
+
+@pytest.fixture
+def test_indexes():
+    return list(range(SPLIT_TRAIN_SIZE, SPLIT_TRAIN_SIZE + SPLIT_TEST_SIZE))

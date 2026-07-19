@@ -3,7 +3,7 @@ import pytest
 
 from tests.conftest import DummyModel
 from utils.Results import Results
-from utils.utils import FilteringCriteria
+from utils.utils import FilteringCriteria, ValidationType
 
 
 def make_results(features_test=None, target_test=None, pred_test=None, predict_score=None):
@@ -141,6 +141,8 @@ class TestAppendResultsFullMerge:
         np.testing.assert_array_equal(
             r1._features_test, np.array([[1, 1], [2, 2], [3, 3]])
         )
+
+
 def test_filter_by_returns_best(classifier):
     r1 = Results(None)
     r1._accuracy = 0.7
@@ -158,3 +160,20 @@ def test_filter_by_returns_best(classifier):
 def test_results_property(classifier):
     classifier._results = [1, 2, 3]
     assert classifier.results == [1, 2, 3]
+
+
+class TestValidation:
+    def test_returns_empty_string_by_default(self):
+        r = Results(DummyModel())
+        assert r.validation == ""
+
+    def test_accepts_valid_validation_type(self):
+        r = Results(DummyModel())
+        r.validation = ValidationType.k_folds
+        assert r.validation == ValidationType.k_folds
+
+    @pytest.mark.parametrize("value", ["invalid", None, 123, object(), ], )
+    def test_rejects_invalid_validation_type(self, value):
+        r = Results(DummyModel())
+        with pytest.raises(ValueError):
+            r.validation = value
