@@ -133,7 +133,6 @@ class Results:
     def set_test(self, features_test, target_test):
         self._features_test = features_test
         self._target_test = target_test
-        self.predict()
 
     def append_results(self, result: Results):
         if result.features_test is not None:

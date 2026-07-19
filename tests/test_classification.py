@@ -5,11 +5,10 @@ from unittest.mock import patch
 import pytest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import chi2
-from sklearn.model_selection import KFold
 from sklearn.svm import SVC
 
 from classificetin_files.Classificetion import Classification
-from utils.utils import create_shared_numpy
+from utils.utils import create_shared_numpy, KFoldsTrainData, cleanup_shared_memory
 
 
 def test_set_initializes_data(classifier):
@@ -117,7 +116,7 @@ def test_brut_force_features(classifier):
         for combo in expected_combinations:
             assert produced.count(combo) == original_models
 
-
+@cleanup_shared_memory
 def test_train_test_split_generator(classifier):
     x = create_shared_numpy(classifier.fetchers.data, "x")
     y = create_shared_numpy(classifier.targets.data, "y")
@@ -130,16 +129,23 @@ def test_train_test_split_generator(classifier):
         assert td.train_index is not None
         assert td.test_index is not None
 
-
+@cleanup_shared_memory
 def test_k_fold_generator(classifier, iris_data):
     x, y = iris_data
-    td = classifier._train_data[0]
+    x=create_shared_numpy(x.values, "x")
+    y=create_shared_numpy(y, "y")
 
-    kf = KFold(3)
+    folds = list(classifier._k_fold_generator(kf=3, X_train=x, y_train=y, shuffle=False))
 
-    folds = list(classifier._k_fold_generator(td, kf, x, y))
+    assert len(folds) == len(classifier._train_data)
 
-    assert len(folds) == 3
+    for fold in folds:
+        assert isinstance(fold, KFoldsTrainData)
+        assert fold.number_of_folds == 3
+        assert fold.shuffle is False
+
+        assert fold.features.shape == x.shape
+        assert fold.target.shape == y.shape
 
 
 def test_train_test_split_exception(classifier):
@@ -152,18 +158,13 @@ def test_train_test_split_exception(classifier):
 
 
 def test_k_folds_exception(classifier):
-    with patch("classificetin_files.Classificetion.Pool", side_effect=RuntimeError("boom"), ):
-        results = classifier.k_folds(3)
-
-    assert results == []
-    assert classifier.results == []
+    with patch("classificetin_files.Classificetion.Pool", side_effect=RuntimeError("boom")):
+        with pytest.raises(RuntimeError, match="boom"):
+            classifier.k_folds(3)
 
 
 def test_fetcher_selection_exception(classifier):
-    with patch(
-            "classificetin_files.Classificetion.Pool",
-            side_effect=RuntimeError("boom"),
-    ):
+    with patch("classificetin_files.Classificetion.Pool", side_effect=RuntimeError("boom"), ):
         with pytest.raises(RuntimeError, match="boom"):
             classifier.fetcher_selection(
                 algorithm=chi2,
