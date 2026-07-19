@@ -15,10 +15,9 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import label_binarize
 
-from utils.utils import create_path
+from utils.utils import create_path, ValidationType
 
 mono_style = ParagraphStyle("Mono", fontName="Courier", fontSize=8, leading=10, )
-
 
 class Results:
     def __init__(self, model):
@@ -31,6 +30,17 @@ class Results:
         self._precision: float = 0
         self._recall: float = 0
         self._f1: float = 0
+        self._validation: str = ""
+
+    @property
+    def validation(self):
+        return self._validation
+
+    @validation.setter
+    def validation(self, validation):
+        if validation not in ValidationType:
+            raise ValueError(f"validation {validation} is not valid")
+        self._validation = validation
 
     @property
     def name(self):
@@ -244,7 +254,7 @@ class Results:
         yield f"Recall   : {self.recall:.4f}"
         yield f"F1 Score : {self.f1:.4f}"
 
-    def report_matrix(self) -> str :
+    def report_matrix(self) -> str:
         return classification_report(
             self.target_test,
             self._pred_test,
@@ -264,5 +274,3 @@ class Results:
         self.save_pdf_report(filename)
         self.save_model(filename)
         print(self)
-
-

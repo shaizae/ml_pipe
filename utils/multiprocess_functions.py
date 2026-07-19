@@ -5,7 +5,7 @@ from sklearn.feature_selection import SelectKBest
 from sklearn.model_selection import KFold
 
 from utils.Results import Results
-from utils.utils import TrainData, KFoldsTrainData, FeaturesSelectionsData, SharedMemory, force_gc
+from utils.utils import TrainData, KFoldsTrainData, FeaturesSelectionsData, SharedMemory, force_gc, ValidationType
 
 warnings.filterwarnings(
     "ignore",
@@ -27,6 +27,7 @@ def train_test_split_mc(train_data: TrainData):
     result.set_test(features_unpackage(train_data.features, train_data.test_index, train_data.featuresIndex),
                     train_data.target.array[train_data.test_index])
     result.predict()
+    result.validation=ValidationType.train_test_split
     return result
 
 
@@ -34,7 +35,9 @@ def train_test_split_mc(train_data: TrainData):
 def train_k_folds_mc(train_data: KFoldsTrainData):
     kf = KFold(n_splits=train_data.number_of_folds, shuffle=train_data.shuffle,random_state=train_data.randon_state)
     final_result: Results = None
-
+    is_loo=False
+    if train_data.number_of_folds ==train_data.target.shape[0]:
+        is_loo = True
     for train_index, test_index in kf.split(train_data.features.array):
         fold_data = train_data.copy()
         fold_data.set_indexes(train_index, test_index)
@@ -50,6 +53,11 @@ def train_k_folds_mc(train_data: KFoldsTrainData):
         else:
             final_result.append_results(result)
     final_result.predict()
+
+    if is_loo:
+        final_result.validation=ValidationType.leave_one_out
+    else:
+        final_result.validation=ValidationType.k_folds
     return final_result
 
 

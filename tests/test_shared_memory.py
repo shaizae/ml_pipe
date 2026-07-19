@@ -143,15 +143,9 @@ def test_shared_memory_unlink_removes_registry():
 
 
 def test_shared_memory_cleanup():
-    create_shared_numpy(
-        np.ones((2, 2)),
-        "test_cleanup_1"
-    )
+    create_shared_numpy(        np.ones((2, 2)),        "test_cleanup_1"    )
 
-    create_shared_numpy(
-        np.zeros((3, 3)),
-        "test_cleanup_2"
-    )
+    create_shared_numpy(        np.zeros((3, 3)),        "test_cleanup_2"    )
 
     assert len(SharedMemory._shms) > 0
 
@@ -164,15 +158,9 @@ def test_multiple_shared_memory_objects():
     arr1 = np.array([1, 2, 3])
     arr2 = np.array([4, 5, 6])
 
-    shm1 = create_shared_numpy(
-        arr1,
-        "test_multiple_1"
-    )
+    shm1 = create_shared_numpy(        arr1,        "test_multiple_1"    )
 
-    shm2 = create_shared_numpy(
-        arr2,
-        "test_multiple_2"
-    )
+    shm2 = create_shared_numpy(        arr2,        "test_multiple_2"    )
 
     try:
         assert np.array_equal(shm1.array, arr1)
@@ -193,10 +181,7 @@ def test_cleanup_decorator_after_success():
     def create_memory():
         arr = np.ones((10, 10))
 
-        shm = create_shared_numpy(
-            arr,
-            "decorator_success"
-        )
+        shm = create_shared_numpy(            arr,            "decorator_success"        )
 
         assert len(SharedMemory._shms) > 0
 
@@ -204,16 +189,12 @@ def test_cleanup_decorator_after_success():
 
     result = create_memory()
 
-    assert np.array_equal(
-        result,
-        np.ones((10, 10))
-    )
+    assert np.array_equal(        result,        np.ones((10, 10))    )
 
     assert SharedMemory._shms == []
 
 
 def test_cleanup_decorator_after_exception():
-
     @cleanup_shared_memory
     def failing_function():
 
