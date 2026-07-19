@@ -101,7 +101,7 @@ class Classification:
 
 
     def leave_one_out(self):
-        self.k_folds(n_splits=len(self.targets.data))
+        return self.k_folds(n_splits=len(self.targets.data))
 
     @cleanup_shared_memory
     def fetcher_selection(self, algorithm: BaseEstimator, number_of_features: list[int]):
