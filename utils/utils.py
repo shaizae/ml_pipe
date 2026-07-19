@@ -65,6 +65,10 @@ def create_shared_numpy(arr: np.ndarray, name: str) -> SharedMemory:
     return shared
 
 
+def features_unpackage(shared_memory: SharedMemory, index: list[int], features_index: list[int]):
+    return shared_memory.array[index][..., features_index]
+
+
 @dataclass(slots=True)
 class TrainData:
     model: Any
@@ -100,6 +104,14 @@ class TrainData:
     def fit(self, train_features: np.ndarray, train_target: np.ndarray):
         self.model.fit(train_features, train_target)
         return self.model
+
+    def get_train(self):
+        return features_unpackage(self.features, self.train_index, self.featuresIndex), self.target.array[
+            self.train_index]
+
+    def get_test(self):
+        return features_unpackage(self.features, self.test_index, self.featuresIndex), self.target.array[
+            self.test_index]
 
     def __iter__(self):
         for field in fields(self):

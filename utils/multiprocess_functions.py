@@ -5,7 +5,7 @@ from sklearn.feature_selection import SelectKBest
 from sklearn.model_selection import KFold
 
 from utils.Results import Results
-from utils.utils import TrainData, KFoldsTrainData, FeaturesSelectionsData, SharedMemory, force_gc
+from utils.utils import TrainData, KFoldsTrainData, FeaturesSelectionsData, force_gc
 
 warnings.filterwarnings(
     "ignore",
@@ -14,18 +14,13 @@ warnings.filterwarnings(
 )
 
 
-def features_unpackage(shared_memory: SharedMemory, index: list[int], features_index: list[int]):
-    return shared_memory.array[index][..., features_index]
-
-
 @force_gc
 def train_test_split_mc(train_data: TrainData):
-    train_data.fit(features_unpackage(train_data.features, train_data.train_index, train_data.featuresIndex),
-                   train_data.target.array[train_data.train_index])
-
+    features, target = train_data.get_train()
+    train_data.fit(features, target)
     result = Results(train_data.model)
-    result.set_test(features_unpackage(train_data.features, train_data.test_index, train_data.featuresIndex),
-                    train_data.target.array[train_data.test_index])
+    features, target = train_data.get_test()
+    result.set_test(features, target)
     result.predict()
     return result
 
@@ -34,17 +29,13 @@ def train_test_split_mc(train_data: TrainData):
 def train_k_folds_mc(train_data: KFoldsTrainData):
     kf = KFold(n_splits=train_data.number_of_folds, shuffle=train_data.shuffle)
     final_result: Results = None
-
     for train_index, test_index in kf.split(train_data.features.array):
         fold_data = train_data.copy()
         fold_data.set_indexes(train_index, test_index)
-
-        result = Results(
-            fold_data.fit(features_unpackage(fold_data.features, fold_data.train_index, fold_data.featuresIndex),
-                          fold_data.target.array[fold_data.train_index]))
-        result.set_test(features_unpackage(fold_data.features, fold_data.test_index, fold_data.featuresIndex),
-                        fold_data.target.array[fold_data.test_index])
-
+        features, target = train_data.get_train()
+        result = Results(fold_data.fit(features, target))
+        features, target = train_data.get_test()
+        result.set_test(features, target)
         if final_result is None:
             final_result = result
         final_result.append_results(result)
