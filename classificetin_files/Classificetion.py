@@ -97,7 +97,7 @@ class Classification:
     def _k_fold_generator(self, kf: int, X_train: SharedMemory, y_train: SharedMemory, shuffle: bool):
         for train_data in self._train_data:
             train_data.set_features_and_targets(X_train, y_train)
-            yield KFoldsTrainData.set_from_train_data(train_data, number_of_folds=kf, shuffle=shuffle)
+            yield KFoldsTrainData.set_from_train_data(train_data, number_of_folds=kf, shuffle=shuffle,randon_state= Classification.random_state)
 
 
     def leave_one_out(self):

@@ -32,7 +32,7 @@ def train_test_split_mc(train_data: TrainData):
 
 @force_gc
 def train_k_folds_mc(train_data: KFoldsTrainData):
-    kf = KFold(n_splits=train_data.number_of_folds, shuffle=train_data.shuffle)
+    kf = KFold(n_splits=train_data.number_of_folds, shuffle=train_data.shuffle,random_state=train_data.randon_state)
     final_result: Results = None
 
     for train_index, test_index in kf.split(train_data.features.array):
@@ -47,7 +47,8 @@ def train_k_folds_mc(train_data: KFoldsTrainData):
 
         if final_result is None:
             final_result = result
-        final_result.append_results(result)
+        else:
+            final_result.append_results(result)
     final_result.predict()
     return final_result
 

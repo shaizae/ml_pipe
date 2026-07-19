@@ -114,14 +114,16 @@ class TrainData:
 class KFoldsTrainData(TrainData):
     number_of_folds: int = 0
     shuffle: bool = True
+    randon_state:int = None
 
     @staticmethod
-    def set_from_train_data(train_data: TrainData, number_of_folds: int, shuffle: bool):
+    def set_from_train_data(train_data: TrainData, number_of_folds: int, shuffle: bool,randon_state: int) -> KFoldsTrainData:
         to_return = KFoldsTrainData(train_data)
         for key, value in train_data:
             setattr(to_return, key, value)
         to_return.number_of_folds = number_of_folds
         to_return.shuffle = shuffle
+        to_return.randon_state = randon_state
         return to_return
 
 
