@@ -11,12 +11,11 @@ warnings.filterwarnings(
     module="sklearn"
 )
 
-@force_gc
 def features_unpackage(shared_memory: SharedMemory, index: list[int], features_index: list[int]):
     return shared_memory.array[index][..., features_index]
 
 
-
+@force_gc
 def train(train_data: TrainData):
     if train_data.print:
         print(f"train start whit model: {train_data.name}")
@@ -32,7 +31,7 @@ def train(train_data: TrainData):
         print(f"predicting results end whit model: {train_data.name}")
     return result
 
-
+@force_gc
 def features_selections(features_selections_data: FeaturesSelectionsData):
     features = features_selections_data.features.array
     target = features_selections_data.target.array

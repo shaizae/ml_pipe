@@ -3,6 +3,7 @@ import pytest
 
 from tests.conftest import DummyModel
 from utils.Results import Results
+from utils.utils import FilteringCriteria
 
 
 def make_results(features_test=None, target_test=None, pred_test=None, predict_score=None):
@@ -140,3 +141,20 @@ class TestAppendResultsFullMerge:
         np.testing.assert_array_equal(
             r1._features_test, np.array([[1, 1], [2, 2], [3, 3]])
         )
+def test_filter_by_returns_best(classifier):
+    r1 = Results(None)
+    r1._accuracy = 0.7
+
+    r2 = Results(None)
+    r2._accuracy = 0.9
+
+    classifier._results = [r1, r2]
+
+    result = classifier.filter_by(FilteringCriteria.accuracy)
+
+    assert result == [r2]
+
+
+def test_results_property(classifier):
+    classifier._results = [1, 2, 3]
+    assert classifier.results == [1, 2, 3]

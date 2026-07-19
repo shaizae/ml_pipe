@@ -127,7 +127,7 @@ def force_gc(func):
         try:
             return func(*args, **kwargs)
         finally:
-            gc.collect()
+            gc.collect(2)
     return wrapper
 
 def cleanup_shared_memory(func):
