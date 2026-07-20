@@ -85,7 +85,8 @@ def leave_one_out():
     test_class = Classification()
 
     test_class.set(X, y, [RandomForestClassifier(), AdaBoostClassifier(), DecisionTreeClassifier(), SVC()])
-    test_class.fetchers.min_max_scaler()
+    test_class.fetchers.standard_scaler()
+    test_class.fetchers.polynomial_features(degree=3,include_bias=True)
     test_class.leave_one_out()
     filtered_results = test_class.filter_by(FilteringCriteria.f1)
     for i in filtered_results:
