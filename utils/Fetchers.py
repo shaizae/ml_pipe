@@ -36,7 +36,7 @@ class Fetchers:
     def columns(self):
         return self._columns
 
-    def standard_scaler(self, with_mean: Any = True, with_std: Any = True):
+    def standard_scaler(self, with_mean: bool = True, with_std: bool = True):
         normalizer = StandardScaler(with_mean=with_mean, with_std=with_std)
         self._data = normalizer.fit_transform(self._data)
         return self.data

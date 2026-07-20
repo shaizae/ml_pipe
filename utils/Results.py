@@ -8,6 +8,7 @@ import numpy as np
 from joblib import dump
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import cm
 from reportlab.platypus import Preformatted
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_score, classification_report
@@ -77,14 +78,14 @@ class Results:
 
     def predict(self):
         self._pred_test = self.model.predict(self.features_test)
-        if not hasattr(self.model, "predict_proba"):
-            print(f"model {self.name} must support predict_proba for ROC curve")
-            return
-        self._predict_score = self.model.predict_proba(self.features_test)
         self._accuracy = accuracy_score(self.target_test, self._pred_test)
         self._precision = precision_score(self.target_test, self._pred_test, average="weighted")
         self._recall = recall_score(self.target_test, self._pred_test, average="weighted")
         self._f1 = f1_score(self.target_test, self._pred_test, average="weighted")
+        if not hasattr(self.model, "predict_proba"):
+            self._features_test = None
+            return
+        self._predict_score = self.model.predict_proba(self.features_test)
         self._features_test = None
 
     def plot_confusion_matrix(self, labels=None, normalize=None, show: bool = True):
@@ -208,6 +209,7 @@ class Results:
         elements.append(Spacer(1, 12))
 
         elements.append(Preformatted(self.report_matrix(), mono_style))
+        elements.append(Spacer(1, 0.5 * cm))
         elements.append(Preformatted(f"validation type: {self.validation}", mono_style))
 
         with TemporaryDirectory() as tmpdir:
