@@ -1,7 +1,7 @@
 import os
 from itertools import combinations
 from multiprocessing.pool import Pool
-from typing import Generator
+from typing import Generator, Any, Iterable
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -22,6 +22,8 @@ class Classification:
     random_state = None
 
     def __init__(self):
+        self._features_index: list[list[int]] = None
+        self._hyper_parameter: dict[str, list[Any]] = {}
         self._results: list[Results] = None
         self.fetchers: Fetchers = None
         self.targets: Target = None
@@ -39,6 +41,8 @@ class Classification:
 
         self.fetchers = Fetchers()
         self.fetchers.load_new_data(fetchers)
+        self._features_index = []
+        self._features_index.append(list(range(self.fetchers.data.shape[1])))
 
         self.targets = Target()
         self.targets.load_new_data(target)
@@ -72,10 +76,13 @@ class Classification:
         train_index, test_index = train_test_split(
             np.arange(len(self.fetchers.data)), test_size=ratio)
 
-        for train_data in self._train_data:
-            train_data.set_features_and_targets(features, target)
-            train_data.set_indexes(train_index, test_index)
-            yield train_data
+        for train_data_class in self._train_data:
+            for index in self._features_index:
+                train_data = train_data_class.copy()
+                train_data.set_features_and_targets(features, target)
+                train_data.set_indexes(train_index, test_index)
+                train_data.set_features_selection(index)
+                yield train_data
 
     @cleanup_shared_memory
     def k_folds(self, n_splits: int = 5, shuffle: bool = True):
@@ -99,10 +106,13 @@ class Classification:
         return self._results
 
     def _k_fold_generator(self, kf: int, X_train: SharedMemory, y_train: SharedMemory, shuffle: bool):
-        for train_data in self._train_data:
-            train_data.set_features_and_targets(X_train, y_train)
-            yield KFoldsTrainData.set_from_train_data(train_data, number_of_folds=kf, shuffle=shuffle,
-                                                      randon_state=Classification.random_state)
+        for train_data_class in self._train_data:
+            for indexes in self._features_index:
+                train_data = train_data_class.copy()
+                train_data.set_features_and_targets(X_train, y_train)
+                train_data.set_features_selection(indexes)
+                yield KFoldsTrainData.set_from_train_data(train_data, number_of_folds=kf, shuffle=shuffle,
+                                                          randon_state=Classification.random_state)
 
     def leave_one_out(self):
         return self.k_folds(n_splits=len(self.targets.data))
@@ -123,13 +133,7 @@ class Classification:
         except Exception as e:
             print(f"fetcher selection fail error={e}")
             raise e
-        train_data_list = []
-        for train_data_class in tqdm(self._train_data, desc="adding features"):
-            for number in results:
-                dummy_train_data = train_data_class.copy()
-                dummy_train_data.set_features_selection(indexes=number)
-                train_data_list.append(dummy_train_data)
-        self._train_data = train_data_list
+        self._features_index = results
 
     @staticmethod
     def fetcher_selection_generator(algorithm: BaseEstimator, number_of_features: list[int],
@@ -137,6 +141,11 @@ class Classification:
         for number in number_of_features:
             yield FeaturesSelectionsData(algorithm=algorithm, features=features, target=target,
                                          number_of_features=number)
+
+    def brut_force_features(self):
+        number_of_features = range(self.fetchers.data.shape[1])
+        vec = np.array(number_of_features)
+        self._features_index = list(_brut_force(vec))
 
     @property
     def results(self):
@@ -146,22 +155,14 @@ class Classification:
         max_value = max(getattr(result, criteria.value) for result in self._results)
         return [item for item in self._results if getattr(item, criteria.value) == max_value]
 
-    def brut_force_features(self):
-        number_of_features = range(self.fetchers.data.shape[1])
-        vec = np.array(number_of_features)
-        all_combinations = list(_brut_force(vec))
-        train_data_list = []
+    def set_hyper_parameter_brut_force(self, hyper_parameter: dict[str, list[Any]]):
+        self._hyper_parameter = hyper_parameter
 
-        for train_data_class in tqdm(self._train_data, desc="adding features"):
-            for combination in all_combinations:
-                dummy_train_data = train_data_class.copy()
-                dummy_train_data.set_features_selection(indexes=combination)
-                train_data_list.append(dummy_train_data)
-
-        self._train_data = train_data_list
+    def _add_hyper_parameter(self, hyper_parameter: dict[str, list[Any]]):
+        pass
 
 
-def _brut_force(vec: np.ndarray):
+def _brut_force(vec: np.ndarray) -> Iterable[np.ndarray]:
     for i in range(len(vec)):
         for combo in combinations(vec, i):
             yield combo

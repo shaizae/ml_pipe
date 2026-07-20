@@ -10,8 +10,8 @@ from utils.utils import FilteringCriteria
 
 
 def main():
-    train_test_split()
-    k_folds()
+    # train_test_split()
+    # k_folds()
     leave_one_out()
 
 
@@ -86,12 +86,13 @@ def leave_one_out():
 
     test_class.set(X, y, [RandomForestClassifier(), AdaBoostClassifier(), DecisionTreeClassifier(), SVC()])
     test_class.fetchers.standard_scaler()
-    test_class.fetchers.polynomial_features(degree=3,include_bias=True)
+    test_class.fetchers.polynomial_features(degree=3, include_bias=True)
+    test_class.set_hyper_parameter_brut_force(
+        {"n_estimators": [50, 100, 120], "min_samples_split": [2, 3, 1]})
     test_class.leave_one_out()
     filtered_results = test_class.filter_by(FilteringCriteria.f1)
     for i in filtered_results:
         i.save_results(r".\tests\pdf")
-
 
 
 if __name__ == '__main__':

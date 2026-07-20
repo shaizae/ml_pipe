@@ -78,14 +78,14 @@ def test_fetcher_selection_updates_train_data(classifier):
     number_of_features = [1, 2]
     original_len = len(classifier._train_data)
     classifier.fetcher_selection(algorithm=chi2, number_of_features=number_of_features)
-    assert len(classifier._train_data) == original_len * 2
-    res = dict()
-    for filter in classifier._train_data:
-        if filter.name not in res:
-            res[filter.name] = []
-        res[filter.name].append(len(filter.featuresIndex))
-    for key in res.keys():
-        assert sorted(res[key]) == [1, 2]
+    assert len(classifier._train_data) == original_len
+    assert len(classifier._features_index) == len(number_of_features)
+    seen = []
+    for i in classifier._features_index:
+        assert len(i) in number_of_features
+        t = tuple(i)
+        assert t not in seen
+        seen.append(t)
 
 
 def test_set_accepts_numpy_target(iris_data):
@@ -101,20 +101,21 @@ def test_set_accepts_numpy_target(iris_data):
 
 def test_use_more_fetchers_that_exist_in_fetcher_selection(classifier):
     classifier.fetcher_selection(algorithm=chi2, number_of_features=[10, 20])
-    for i in classifier._train_data:
-        assert len(i.featuresIndex) == 4
+    for i in classifier._features_index:
+        assert len(i) == 4
 
 
 def test_brut_force_features(classifier):
-    original_models = len(classifier._train_data)
+    original_models = len(classifier._features_index)
     n_features = classifier.fetchers.data.shape[1]
     expected_combinations = [combo for i in range(n_features) for combo in combinations(range(n_features), i)]
     classifier.brut_force_features()
-    assert len(classifier._train_data) == (original_models * len(expected_combinations))
-    produced = [tuple(td.featuresIndex) for td in classifier._train_data]
+    assert len(classifier._features_index) == (original_models * len(expected_combinations))
+    produced = [tuple(td) for td in classifier._features_index]
     for _ in range(original_models):
         for combo in expected_combinations:
             assert produced.count(combo) == original_models
+
 
 @cleanup_shared_memory
 def test_train_test_split_generator(classifier):
@@ -129,11 +130,12 @@ def test_train_test_split_generator(classifier):
         assert td.train_index is not None
         assert td.test_index is not None
 
+
 @cleanup_shared_memory
 def test_k_fold_generator(classifier, iris_data):
     x, y = iris_data
-    x=create_shared_numpy(x.values, "x")
-    y=create_shared_numpy(y, "y")
+    x = create_shared_numpy(x.values, "x")
+    y = create_shared_numpy(y, "y")
 
     folds = list(classifier._k_fold_generator(kf=3, X_train=x, y_train=y, shuffle=False))
 
