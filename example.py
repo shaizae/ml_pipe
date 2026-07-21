@@ -4,14 +4,15 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.feature_selection import chi2
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
+from tqdm.auto import tqdm
 
 from classificetin_files.Classificetion import Classification
 from utils.utils import FilteringCriteria
 
 
 def main():
-    # train_test_split()
-    # k_folds()
+    train_test_split()
+    k_folds()
     leave_one_out()
 
 
@@ -37,7 +38,7 @@ def train_test_split():
     test_class.brut_force_features()
     test_class.train_test_split()
     filtered_results = test_class.filter_by(FilteringCriteria.accuracy)
-    for i in filtered_results:
+    for i in tqdm(filtered_results):
         i.save_results(r".\tests\pdf")
 
 
@@ -63,7 +64,7 @@ def k_folds():
     test_class.fetcher_selection(chi2, [1, 2, 3])
     test_class.k_folds()
     filtered_results = test_class.filter_by(FilteringCriteria.precision)
-    for i in filtered_results:
+    for i in tqdm(filtered_results):
         i.save_results(r".\tests\pdf")
 
 
@@ -88,10 +89,10 @@ def leave_one_out():
     test_class.fetchers.standard_scaler()
     test_class.fetchers.polynomial_features(degree=3, include_bias=True)
     test_class.set_hyper_parameter_brut_force(
-        {"n_estimators": [50, 100, 120], "min_samples_split": [2, 3, 6]})
+        {"n_estimators": [50, 100, 120], "min_samples_split": [2, 3, 6],"C":[1,2,3]})
     test_class.leave_one_out()
     filtered_results = test_class.filter_by(FilteringCriteria.f1)
-    for i in filtered_results:
+    for i in tqdm(filtered_results):
         i.save_results(r".\tests\pdf")
 
 

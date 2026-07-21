@@ -63,8 +63,7 @@ class Classification:
         try:
             with Pool(processes=self._process_limit, maxtasksperchild=20) as pool:
                 self._results = list(
-                    tqdm(pool.imap_unordered(train_test_split_mc, train_data), total=len(self._train_data),
-                         desc="training"))
+                    tqdm(pool.imap_unordered(train_test_split_mc, train_data), desc="training"))
 
         except Exception as e:
             print(f"training fail error={e}")
@@ -101,8 +100,7 @@ class Classification:
         try:
             with Pool(processes=self._process_limit, maxtasksperchild=20) as pool:
                 self._results = list(
-                    tqdm(pool.imap_unordered(train_k_folds_mc, train_inputs), total=len(self._train_data),
-                         desc="training"))
+                    tqdm(pool.imap_unordered(train_k_folds_mc, train_inputs), desc="training"))
         except Exception as e:
             print(f"training fail error={e}")
             raise e
@@ -114,10 +112,10 @@ class Classification:
                 train_data = train_data_class.copy()
                 train_data.set_features_and_targets(X_train, y_train)
                 train_data.set_features_selection(indexes)
-                with_params=self._add_hyper_parameter(train_data)
+                with_params = self._add_hyper_parameter(train_data)
                 for params in with_params:
                     yield KFoldsTrainData.set_from_train_data(params, number_of_folds=kf, shuffle=shuffle,
-                                                          randon_state=Classification.random_state)
+                                                              randon_state=Classification.random_state)
 
     def leave_one_out(self):
         return self.k_folds(n_splits=len(self.targets.data))
@@ -163,7 +161,8 @@ class Classification:
     def set_hyper_parameter_brut_force(self, hyper_parameter: dict[str, list[Any]]):
         self._hyper_parameter = hyper_parameter
 
-    def _add_hyper_parameter(self, train_data: TrainData, ) -> list[TrainData]:
+    def _add_hyper_parameter(self, data: TrainData) -> list[TrainData]:
+        train_data = data.copy()
         model_params = train_data.get_model_params()
         valid_params = {k: v for k, v in self._hyper_parameter.items() if k in model_params}
         if not valid_params:
@@ -179,6 +178,6 @@ class Classification:
 
 
 def _brut_force(vec: np.ndarray) -> Iterable[np.ndarray]:
-    for i in range(len(vec)):
+    for i in range(1, len(vec)):
         for combo in combinations(vec, i):
             yield combo

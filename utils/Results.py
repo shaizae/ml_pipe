@@ -208,9 +208,8 @@ class Results:
 
         elements.append(Spacer(1, 12))
 
-        elements.append(Preformatted(self.report_matrix(), mono_style))
+        elements.append(Preformatted(self.report_matrix(), styles["BodyText"]))
         elements.append(Spacer(1, 0.5 * cm))
-        elements.append(Preformatted(f"validation type: {self.validation}", mono_style))
 
         with TemporaryDirectory() as tmpdir:
 
@@ -255,6 +254,7 @@ class Results:
         yield f"Precision: {self.precision:.4f}"
         yield f"Recall   : {self.recall:.4f}"
         yield f"F1 Score : {self.f1:.4f}"
+        yield f" validation type: {self.validation}"
 
     def report_matrix(self) -> str:
         return classification_report(
