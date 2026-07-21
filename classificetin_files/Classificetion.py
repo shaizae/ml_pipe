@@ -1,5 +1,6 @@
 import os
 from itertools import combinations
+from itertools import product
 from multiprocessing.pool import Pool
 from typing import Generator, Any, Iterable
 
@@ -82,7 +83,9 @@ class Classification:
                 train_data.set_features_and_targets(features, target)
                 train_data.set_indexes(train_index, test_index)
                 train_data.set_features_selection(index)
-                yield train_data
+                with_params = self._add_hyper_parameter(train_data)
+                for params in with_params:
+                    yield params
 
     @cleanup_shared_memory
     def k_folds(self, n_splits: int = 5, shuffle: bool = True):
@@ -111,7 +114,9 @@ class Classification:
                 train_data = train_data_class.copy()
                 train_data.set_features_and_targets(X_train, y_train)
                 train_data.set_features_selection(indexes)
-                yield KFoldsTrainData.set_from_train_data(train_data, number_of_folds=kf, shuffle=shuffle,
+                with_params=self._add_hyper_parameter(train_data)
+                for params in with_params:
+                    yield KFoldsTrainData.set_from_train_data(params, number_of_folds=kf, shuffle=shuffle,
                                                           randon_state=Classification.random_state)
 
     def leave_one_out(self):
@@ -158,8 +163,19 @@ class Classification:
     def set_hyper_parameter_brut_force(self, hyper_parameter: dict[str, list[Any]]):
         self._hyper_parameter = hyper_parameter
 
-    def _add_hyper_parameter(self, hyper_parameter: dict[str, list[Any]]):
-        pass
+    def _add_hyper_parameter(self, train_data: TrainData, ) -> list[TrainData]:
+        model_params = train_data.get_model_params()
+        valid_params = {k: v for k, v in self._hyper_parameter.items() if k in model_params}
+        if not valid_params:
+            return [train_data]
+        keys = list(valid_params.keys())
+        new_train_data = []
+        for values in product(*(valid_params[k] for k in keys)):
+            td = train_data.copy()
+            params = dict(zip(keys, values))
+            td.model.set_params(**params)
+            new_train_data.append(td)
+        return new_train_data
 
 
 def _brut_force(vec: np.ndarray) -> Iterable[np.ndarray]:
