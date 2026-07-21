@@ -2,8 +2,7 @@ import numpy as np
 import pytest
 
 # Change this import to your actual file location
-from utils.utils import     SharedMemory,    create_shared_numpy,    cleanup_shared_memory
-
+from utils.utils import SharedMemory, create_shared_numpy, cleanup_shared_memory
 
 
 @pytest.fixture(autouse=True)
@@ -116,51 +115,45 @@ def test_shared_memory_repr():
 def test_shared_memory_is_registered():
     original = np.ones((2, 2))
 
-    shm = create_shared_numpy(
-        original,
-        "test_registered"
-    )
+    shm = create_shared_numpy(original, "test_registered")
 
     try:
-        assert shm in SharedMemory._shms
-
+        assert shm in list(SharedMemory._shms.values())
     finally:
         shm.unlink()
+
 
 def test_shared_memory_unlink_removes_registry():
     original = np.ones((2, 2))
 
-    shm = create_shared_numpy(
-        original,
-        "test_unlink"
-    )
+    shm = create_shared_numpy(original, "test_unlink")
 
-    assert shm in SharedMemory._shms
+    assert shm in list(SharedMemory._shms.values())
 
     shm.unlink()
 
-    assert shm not in SharedMemory._shms
+    assert shm not in list(SharedMemory._shms.values())
 
 
 def test_shared_memory_cleanup():
-    create_shared_numpy(        np.ones((2, 2)),        "test_cleanup_1"    )
+    create_shared_numpy(np.ones((2, 2)), "test_cleanup_1")
 
-    create_shared_numpy(        np.zeros((3, 3)),        "test_cleanup_2"    )
+    create_shared_numpy(np.zeros((3, 3)), "test_cleanup_2")
 
     assert len(SharedMemory._shms) > 0
 
     SharedMemory.cleanup()
 
-    assert SharedMemory._shms == []
+    assert SharedMemory._shms == {}
 
 
 def test_multiple_shared_memory_objects():
     arr1 = np.array([1, 2, 3])
     arr2 = np.array([4, 5, 6])
 
-    shm1 = create_shared_numpy(        arr1,        "test_multiple_1"    )
+    shm1 = create_shared_numpy(arr1, "test_multiple_1")
 
-    shm2 = create_shared_numpy(        arr2,        "test_multiple_2"    )
+    shm2 = create_shared_numpy(arr2, "test_multiple_2")
 
     try:
         assert np.array_equal(shm1.array, arr1)
@@ -176,12 +169,11 @@ def test_multiple_shared_memory_objects():
 # -------------------------
 
 def test_cleanup_decorator_after_success():
-
     @cleanup_shared_memory
     def create_memory():
         arr = np.ones((10, 10))
 
-        shm = create_shared_numpy(            arr,            "decorator_success"        )
+        shm = create_shared_numpy(arr, "decorator_success")
 
         assert len(SharedMemory._shms) > 0
 
@@ -189,88 +181,71 @@ def test_cleanup_decorator_after_success():
 
     result = create_memory()
 
-    assert np.array_equal(        result,        np.ones((10, 10))    )
+    assert np.array_equal(result, np.ones((10, 10)))
 
-    assert SharedMemory._shms == []
+    assert SharedMemory._shms == {}
 
 
 def test_cleanup_decorator_after_exception():
     @cleanup_shared_memory
     def failing_function():
-
-        create_shared_numpy(
-            np.zeros((5, 5)),
-            "decorator_exception"
-        )
+        create_shared_numpy(np.zeros((5, 5)), "decorator_exception")
 
         assert len(SharedMemory._shms) > 0
 
         raise RuntimeError("expected error")
 
-    with pytest.raises(
-        RuntimeError,
-        match="expected error"
-    ):
+    with pytest.raises(            RuntimeError,            match="expected error"    ):
         failing_function()
 
-    assert SharedMemory._shms == []
+    assert SharedMemory._shms == {}
 
 
 def test_cleanup_decorator_keeps_return_value():
-
     @cleanup_shared_memory
     def return_value():
-
-        create_shared_numpy(
-            np.array([1, 2, 3]),
-            "decorator_return"
-        )
+        create_shared_numpy(np.array([1, 2, 3]), "decorator_return")
 
         return 42
 
     result = return_value()
 
     assert result == 42
-    assert SharedMemory._shms == []
+    assert SharedMemory._shms == {}
 
 
 def test_cleanup_decorator_passes_arguments():
-
     @cleanup_shared_memory
     def create_with_argument(size):
-
         arr = np.zeros((size, size))
 
-        create_shared_numpy(
-            arr,
-            "decorator_arguments"
-        )
+        create_shared_numpy(arr, "decorator_arguments")
 
         return arr.shape
 
     result = create_with_argument(7)
 
     assert result == (7, 7)
-    assert SharedMemory._shms == []
+    assert SharedMemory._shms == {}
 
 
 def test_cleanup_decorator_multiple_shared_memory():
-
     @cleanup_shared_memory
     def create_multiple():
+        create_shared_numpy(np.ones((2, 2)), "decorator_multi_1")
 
-        create_shared_numpy(
-            np.ones((2, 2)),
-            "decorator_multi_1"
-        )
-
-        create_shared_numpy(
-            np.zeros((3, 3)),
-            "decorator_multi_2"
-        )
+        create_shared_numpy(np.zeros((3, 3)), "decorator_multi_2")
 
         assert len(SharedMemory._shms) > 0
 
     create_multiple()
 
-    assert SharedMemory._shms == []
+    assert SharedMemory._shms == {}
+
+def test_add_two_sherd_memoris_with_the_same_name():
+    def create_memory():
+        create_shared_numpy(np.ones((2, 2)), "decorator_multi_1")
+        create_shared_numpy(np.zeros((3, 3)), "decorator_multi_1")
+
+    with pytest.raises(ValueError, match="decorator_multi_1 is already exists"):
+        create_memory()

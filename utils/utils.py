@@ -12,10 +12,9 @@ from sklearn.base import BaseEstimator
 
 
 class SharedMemory:
-    _shms = []
+    _shms: dict[str, SharedMemory] = {}
 
-    def __init__(self, memory: shared_memory.SharedMemory, shape: Tuple[Any, ...], dtype: np.dtype):
-
+    def __init__(self, memory: shared_memory.SharedMemory, shape: Tuple[Any, ...], dtype: np.dtype, ):
         self.shm = memory
         self.shape = shape
         self.dtype = dtype
@@ -26,38 +25,36 @@ class SharedMemory:
         self.shm.close()
         self.shm.unlink()
 
-        if self in SharedMemory._shms:
-            SharedMemory._shms.remove(self)
+        SharedMemory._shms.pop(self.shm.name, None)
 
     @staticmethod
-    def add(shm):
-        SharedMemory._shms.append(shm)
+    def add(shm: SharedMemory):
+        if shm.shm.name in SharedMemory._shms.keys():
+            raise ValueError(f"{shm.shm.name} is already exists")
+        SharedMemory._shms[shm.shm.name] = shm
+
+    @staticmethod
+    def validate(name: str) -> bool:
+        return name in list(SharedMemory._shms.keys())
 
     @staticmethod
     def cleanup():
-        for shm in SharedMemory._shms[:]:
-            try:
-                shm.unlink()
-            except FileNotFoundError:
-                pass
-            except Exception as e:
-                print(f"cleanup error: {e}")
+        for shm in list(SharedMemory._shms.values()):
+            shm.unlink()
 
         SharedMemory._shms.clear()
 
     @property
     def array(self):
-        return np.ndarray(
-            self.shape,
-            dtype=self.dtype,
-            buffer=self.shm.buf
-        )
+        return np.ndarray(self.shape, dtype=self.dtype, buffer=self.shm.buf, )
 
     def __repr__(self):
-        return f"SharedMemory - name={self.shm.name}, shape={self.shape}, dtype={self.dtype}"
+        return (f"SharedMemory(name={self.shm.name}, shape={self.shape}, dtype={self.dtype})")
 
 
 def create_shared_numpy(arr: np.ndarray, name: str) -> SharedMemory:
+    if SharedMemory.validate(name):
+        raise ValueError(f"{name} is already exists")
     memory = shared_memory.SharedMemory(create=True, size=arr.nbytes, name=name)
     shared_array = np.ndarray(arr.shape, dtype=arr.dtype, buffer=memory.buf)
     shared_array[:] = arr[:]
@@ -74,7 +71,6 @@ class TrainData:
     model: Any
     features: SharedMemory = None
     target: SharedMemory = None
-    print: bool = False
     train_index: list[int] = None
     test_index: list[int] = None
     featuresIndex: list[int] = None
@@ -83,16 +79,15 @@ class TrainData:
     def name(self):
         return self.model.__class__.__name__
 
+    def get_model_params(self) -> dict[str, Any]:
+        return {k: v for k, v in self.model.__dict__.items() if not k.startswith("_")}
+
     def copy(self):
         return deepcopy(self)
 
     def set_features_and_targets(self, features: SharedMemory, target: SharedMemory):
         self.features = features
         self.target = target
-        if len(self.features.shape) == 1:
-            self.featuresIndex = [0]
-            return
-        self.featuresIndex = list(range(self.features.shape[1]))
 
     def set_indexes(self, train_index: list[int], test_index: list[int]):
         self.train_index = train_index
@@ -114,17 +109,13 @@ class TrainData:
 class KFoldsTrainData(TrainData):
     number_of_folds: int = 0
     shuffle: bool = True
-    randon_state:int = None
+    randon_state: int = None
 
     @staticmethod
-    def set_from_train_data(train_data: TrainData, number_of_folds: int, shuffle: bool,randon_state: int) -> KFoldsTrainData:
-        to_return = KFoldsTrainData(train_data)
-        for key, value in train_data:
-            setattr(to_return, key, value)
-        to_return.number_of_folds = number_of_folds
-        to_return.shuffle = shuffle
-        to_return.randon_state = randon_state
-        return to_return
+    def set_from_train_data(train_data: TrainData, number_of_folds: int, shuffle: bool,
+                            randon_state: int, ) -> KFoldsTrainData:
+        return KFoldsTrainData(**dict(train_data), number_of_folds=number_of_folds, shuffle=shuffle,
+                               randon_state=randon_state, )
 
 
 @dataclass(slots=True)
@@ -134,10 +125,12 @@ class FeaturesSelectionsData:
     target: SharedMemory
     number_of_features: int
 
+
 class ValidationType(StrEnum):
     train_test_split = "train_test_split"
-    k_folds= "k_folds"
+    k_folds = "k_folds"
     leave_one_out = "leave_one_out"
+
 
 class FilteringCriteria(StrEnum):
     accuracy = "accuracy"
