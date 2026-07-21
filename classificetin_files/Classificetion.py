@@ -76,15 +76,9 @@ class Classification:
         train_index, test_index = train_test_split(
             np.arange(len(self.fetchers.data)), test_size=ratio)
 
-        for train_data_class in self._train_data:
-            for index in self._features_index:
-                train_data = train_data_class.copy()
-                train_data.set_features_and_targets(features, target)
-                train_data.set_indexes(train_index, test_index)
-                train_data.set_features_selection(index)
-                with_params = self._add_hyper_parameter(train_data)
-                for params in with_params:
-                    yield params
+        for train_data in self._build_training_list(features, target):
+            train_data.set_indexes(train_index, test_index)
+            yield train_data
 
     @cleanup_shared_memory
     def k_folds(self, n_splits: int = 5, shuffle: bool = True):
@@ -106,7 +100,12 @@ class Classification:
             raise e
         return self._results
 
-    def _k_fold_generator(self, kf: int, X_train: SharedMemory, y_train: SharedMemory, shuffle: bool):
+    def _k_fold_generator(self, kf: int, features: SharedMemory, target: SharedMemory, shuffle: bool):
+        for train_data in self._build_training_list(features, target):
+            yield KFoldsTrainData.set_from_train_data(train_data, number_of_folds=kf, shuffle=shuffle,
+                                                      randon_state=Classification.random_state)
+
+    def _build_training_list(self, X_train: SharedMemory, y_train: SharedMemory) -> Iterable[TrainData]:
         for train_data_class in self._train_data:
             for indexes in self._features_index:
                 train_data = train_data_class.copy()
@@ -114,8 +113,7 @@ class Classification:
                 train_data.set_features_selection(indexes)
                 with_params = self._add_hyper_parameter(train_data)
                 for params in with_params:
-                    yield KFoldsTrainData.set_from_train_data(params, number_of_folds=kf, shuffle=shuffle,
-                                                              randon_state=Classification.random_state)
+                    yield params
 
     def leave_one_out(self):
         return self.k_folds(n_splits=len(self.targets.data))

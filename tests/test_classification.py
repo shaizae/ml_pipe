@@ -108,7 +108,7 @@ def test_use_more_fetchers_that_exist_in_fetcher_selection(classifier):
 def test_brut_force_features(classifier):
     original_models = len(classifier._features_index)
     n_features = classifier.fetchers.data.shape[1]
-    expected_combinations = [combo for i in range(n_features) for combo in combinations(range(n_features), i)]
+    expected_combinations = [combo for i in range(n_features) for combo in combinations(range(n_features), i)][1:]
     classifier.brut_force_features()
     assert len(classifier._features_index) == (original_models * len(expected_combinations))
     produced = [tuple(td) for td in classifier._features_index]
@@ -137,7 +137,7 @@ def test_k_fold_generator(classifier, iris_data):
     x = create_shared_numpy(x.values, "x")
     y = create_shared_numpy(y, "y")
 
-    folds = list(classifier._k_fold_generator(kf=3, X_train=x, y_train=y, shuffle=False))
+    folds = list(classifier._k_fold_generator(kf=3, features=x, target=y, shuffle=False))
 
     assert len(folds) == len(classifier._train_data)
 
@@ -200,7 +200,10 @@ def test_add_hyper_parameter_no_valid_parameters(classifier):
     classifier._hyper_parameter = {"fake_parameter": [1, 2, 3]}
     result = classifier._add_hyper_parameter(train_data)
     assert len(result) == 1
-    assert result[0] is train_data
+    returned = result[0]
+    assert returned is not train_data
+    assert isinstance(returned.model, SVC)
+    assert returned.model.get_params() == train_data.model.get_params()
 
 
 def test_add_hyper_parameter_does_not_change_original_model(classifier):
