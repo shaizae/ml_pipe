@@ -168,10 +168,7 @@ def test_k_folds_exception(classifier):
 def test_fetcher_selection_exception(classifier):
     with patch("classificetin_files.Classificetion.Pool", side_effect=RuntimeError("boom"), ):
         with pytest.raises(RuntimeError, match="boom"):
-            classifier.fetcher_selection(
-                algorithm=chi2,
-                number_of_features=[1, 2],
-            )
+            classifier.fetcher_selection(algorithm=chi2, number_of_features=[1, 2], )
 
 
 def test_k_folds_no_shuffle(classifier):
@@ -181,35 +178,18 @@ def test_k_folds_no_shuffle(classifier):
 
 def test_add_hyper_parameter_create_combinations(classifier):
     train_data = TrainData(model=RandomForestClassifier())
-
-    classifier._hyper_parameter = {
-        "n_estimators": [10, 20],
-        "max_depth": [2, 4]
-    }
-
+    classifier._hyper_parameter = {"n_estimators": [10, 20], "max_depth": [2, 4]}
     result = classifier._add_hyper_parameter(train_data)
-
     assert len(result) == 4
-
     params = [(td.model.get_params()["n_estimators"], td.model.get_params()["max_depth"]) for td in result]
-
-    assert set(params) == {
-        (10, 2),
-        (10, 4),
-        (20, 2),
-        (20, 4)
-    }
+    assert set(params) == {(10, 2), (10, 4), (20, 2), (20, 4)}
 
 
 def test_add_hyper_parameter_ignore_invalid_parameters(classifier):
     train_data = TrainData(model=SVC())
-
     classifier._hyper_parameter = {"C": [1, 10], "not_a_parameter": [100, 200]}
-
     result = classifier._add_hyper_parameter(train_data)
-
     assert len(result) == 2
-
     for td in result:
         assert td.model.get_params()["C"] in [1, 10]
         assert "not_a_parameter" not in td.model.get_params()
@@ -217,28 +197,20 @@ def test_add_hyper_parameter_ignore_invalid_parameters(classifier):
 
 def test_add_hyper_parameter_no_valid_parameters(classifier):
     train_data = TrainData(model=SVC())
-
     classifier._hyper_parameter = {"fake_parameter": [1, 2, 3]}
-
     result = classifier._add_hyper_parameter(train_data)
-
     assert len(result) == 1
-
     assert result[0] is train_data
 
 
 def test_add_hyper_parameter_does_not_change_original_model(classifier):
     train_data = TrainData(model=RandomForestClassifier(n_estimators=50))
-
     classifier._hyper_parameter = {"n_estimators": [100]}
-
     result = classifier._add_hyper_parameter(train_data)
-
     assert len(result) == 1
-
     assert result[0].model.get_params()["n_estimators"] == 100
-
     assert train_data.model.get_params()["n_estimators"] == 50
+
 
 def test_add_hyper_parameter_multiple_models_shared_parameters(classifier):
     train_data_list = [
@@ -248,8 +220,8 @@ def test_add_hyper_parameter_multiple_models_shared_parameters(classifier):
     ]
 
     classifier._hyper_parameter = {
-        "n_estimators": [10, 20],   # RandomForest + AdaBoost
-        "C": [1, 10]               # SVC only
+        "n_estimators": [10, 20],  # RandomForest + AdaBoost
+        "C": [1, 10]  # SVC only
     }
 
     results = []
@@ -264,42 +236,23 @@ def test_add_hyper_parameter_multiple_models_shared_parameters(classifier):
     # SVC -> 2
     assert len(results) == 6
 
-    rf_results = [
-        td for td in results
-        if isinstance(td.model, RandomForestClassifier)
-    ]
+    rf_results = [td for td in results if isinstance(td.model, RandomForestClassifier)]
 
-    ada_results = [
-        td for td in results
-        if isinstance(td.model, AdaBoostClassifier)
-    ]
+    ada_results = [td for td in results if isinstance(td.model, AdaBoostClassifier)]
 
-    svc_results = [
-        td for td in results
-        if isinstance(td.model, SVC)
-    ]
+    svc_results = [td for td in results if isinstance(td.model, SVC)]
 
     assert len(rf_results) == 2
     assert len(ada_results) == 2
     assert len(svc_results) == 2
 
     # Shared parameter check
-    assert {
-        td.model.get_params()["n_estimators"]
-        for td in rf_results
-    } == {10, 20}
+    assert {td.model.get_params()["n_estimators"] for td in rf_results} == {10, 20}
 
-    assert {
-        td.model.get_params()["n_estimators"]
-        for td in ada_results
-    } == {10, 20}
+    assert {td.model.get_params()["n_estimators"] for td in ada_results} == {10, 20}
 
     # SVC parameter check
-    assert {
-        td.model.get_params()["C"]
-        for td in svc_results
-    } == {1, 10}
-
+    assert {td.model.get_params()["C"] for td in svc_results} == {1, 10}
 
     # Make sure models are independent objects
     assert rf_results[0].model is not rf_results[1].model
