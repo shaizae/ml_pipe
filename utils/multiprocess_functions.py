@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.feature_selection import SelectKBest
 from sklearn.model_selection import KFold
 
-from utils.Results import Results
+from results.ClassificationResults import ClassificationResults
 from utils.utils import TrainData, KFoldsTrainData, FeaturesSelectionsData, SharedMemory, force_gc, ValidationType
 
 warnings.filterwarnings(
@@ -23,7 +23,7 @@ def train_test_split_mc(train_data: TrainData):
     train_data.fit(features_unpackage(train_data.features, train_data.train_index, train_data.featuresIndex),
                    train_data.target.array[train_data.train_index])
 
-    result = Results(train_data.model)
+    result = ClassificationResults(train_data.model)
     result.set_test(features_unpackage(train_data.features, train_data.test_index, train_data.featuresIndex),
                     train_data.target.array[train_data.test_index])
     result.predict()
@@ -34,7 +34,7 @@ def train_test_split_mc(train_data: TrainData):
 @force_gc
 def train_k_folds_mc(train_data: KFoldsTrainData):
     kf = KFold(n_splits=train_data.number_of_folds, shuffle=train_data.shuffle,random_state=train_data.randon_state)
-    final_result: Results = None
+    final_result: ClassificationResults = None
     is_loo=False
     if train_data.number_of_folds ==train_data.target.shape[0]:
         is_loo = True
@@ -42,7 +42,7 @@ def train_k_folds_mc(train_data: KFoldsTrainData):
         fold_data = train_data.copy()
         fold_data.set_indexes(train_index, test_index)
 
-        result = Results(
+        result = ClassificationResults(
             fold_data.fit(features_unpackage(fold_data.features, fold_data.train_index, fold_data.featuresIndex),
                           fold_data.target.array[fold_data.train_index]))
         result.set_test(features_unpackage(fold_data.features, fold_data.test_index, fold_data.featuresIndex),

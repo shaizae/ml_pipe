@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.feature_selection import chi2
 from sklearn.svm import SVC
 
-from classificetin_files.Classificetion import Classification
+from external_classes.Classificetion import Classification
 from utils.utils import create_shared_numpy, KFoldsTrainData, cleanup_shared_memory, TrainData
 
 
@@ -152,7 +152,7 @@ def test_k_fold_generator(classifier, iris_data):
 
 def test_train_test_split_exception(classifier):
     with patch(
-            "classificetin_files.Classificetion.Pool",
+            "external_classes.Classificetion.Pool",
             side_effect=RuntimeError("boom")
     ):
         with pytest.raises(RuntimeError):
@@ -160,13 +160,13 @@ def test_train_test_split_exception(classifier):
 
 
 def test_k_folds_exception(classifier):
-    with patch("classificetin_files.Classificetion.Pool", side_effect=RuntimeError("boom")):
+    with patch("external_classes.Classificetion.Pool", side_effect=RuntimeError("boom")):
         with pytest.raises(RuntimeError, match="boom"):
             classifier.k_folds(3)
 
 
 def test_fetcher_selection_exception(classifier):
-    with patch("classificetin_files.Classificetion.Pool", side_effect=RuntimeError("boom"), ):
+    with patch("external_classes.Classificetion.Pool", side_effect=RuntimeError("boom"), ):
         with pytest.raises(RuntimeError, match="boom"):
             classifier.fetcher_selection(algorithm=chi2, number_of_features=[1, 2], )
 

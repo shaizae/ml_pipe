@@ -6,7 +6,7 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from tqdm.auto import tqdm
 
-from classificetin_files.Classificetion import Classification
+from external_classes.Classificetion import Classification
 from utils.utils import FilteringCriteria
 
 

@@ -4,7 +4,7 @@ from sklearn.feature_selection import f_classif
 
 from tests.conftest import FEATURE_INDEXES, K_FOLDS, LEAVE_ONE_OUT_FOLDS, RANDOM_STATE, IRIS_SAMPLES, SELECTED_FEATURES, \
     IRIS_FEATURE_COUNT, ALL_FEATURES, iris_data_sherd_memory
-from utils.Results import Results
+from results.ClassificationResults import ClassificationResults
 from utils.multiprocess_functions import train_test_split_mc, train_k_folds_mc, features_selections
 from utils.utils import TrainData, KFoldsTrainData, FeaturesSelectionsData, ValidationType, features_unpackage, \
     cleanup_shared_memory
@@ -31,7 +31,7 @@ def test_train_test_split_mc( logistic_model, train_indexes, test_indexes, iris_
 
     result = train_test_split_mc(data)
 
-    assert isinstance(result, Results)
+    assert isinstance(result, ClassificationResults)
 
     assert result.validation == ValidationType.train_test_split
 
@@ -48,7 +48,7 @@ def test_train_k_folds_mc(iris_data_sherd_memory, logistic_model, folds, expecte
 
     result = train_k_folds_mc(data)
 
-    assert isinstance(result, Results)
+    assert isinstance(result, ClassificationResults)
 
     assert result.validation == expected_validation
 

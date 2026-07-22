@@ -10,25 +10,21 @@ from sklearn.base import BaseEstimator
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
+from external_classes.BaseML import BaseML
 from utils.Fetchers import Fetchers
-from utils.Results import Results
+from results.ClassificationResults import ClassificationResults
 from utils.Target import Target
 from utils.multiprocess_functions import train_test_split_mc, features_selections, train_k_folds_mc
 from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, SharedMemory, FilteringCriteria, \
     cleanup_shared_memory, KFoldsTrainData
 
 
-class Classification:
+class Classification(BaseML):
     _process_limit: int = max(1, os.cpu_count() // 2)
     random_state = None
-
     def __init__(self):
-        self._features_index: list[list[int]] = None
-        self._hyper_parameter: dict[str, list[Any]] = {}
-        self._results: list[Results] = None
-        self.fetchers: Fetchers = None
-        self.targets: Target = None
-        self._train_data: list[TrainData] = None
+        super().__init__()
+        self._results: list[ClassificationResults] = None
 
     @staticmethod
     def process_limit(new_limit: int):

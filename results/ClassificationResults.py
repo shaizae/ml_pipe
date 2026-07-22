@@ -5,7 +5,6 @@ from tempfile import TemporaryDirectory
 
 import matplotlib.pyplot as plt
 import numpy as np
-from joblib import dump
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
@@ -16,37 +15,19 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import label_binarize
 
-from utils.utils import create_path, ValidationType
+from results.BaseResults import BaseResults
 
 mono_style = ParagraphStyle("Mono", fontName="Courier", fontSize=8, leading=10, )
 
 
-class Results:
+class ClassificationResults(BaseResults):
     def __init__(self, model):
-        self.model = model
-        self._features_test = None
-        self._target_test = None
-        self._pred_test = None
+        super().__init__(model)
         self._predict_score = None
         self._accuracy: float = 0
         self._precision: float = 0
         self._recall: float = 0
         self._f1: float = 0
-        self._validation: str = ""
-
-    @property
-    def validation(self):
-        return self._validation
-
-    @validation.setter
-    def validation(self, validation):
-        if validation not in ValidationType:
-            raise ValueError(f"validation {validation} is not valid")
-        self._validation = validation
-
-    @property
-    def name(self):
-        return self.model.__class__.__name__
 
     @property
     def accuracy(self):
@@ -63,18 +44,6 @@ class Results:
     @property
     def f1(self):
         return self._f1
-
-    @property
-    def features_test(self):
-        if self._features_test is None:
-            return None
-        return self._features_test
-
-    @property
-    def target_test(self):
-        if self._target_test is None:
-            return None
-        return self._target_test
 
     def predict(self):
         self._pred_test = self.model.predict(self.features_test)
@@ -141,51 +110,6 @@ class Results:
         plt.legend()
         if show:
             plt.show()
-
-    def set_test(self, features_test, target_test):
-        self._features_test = features_test
-        self._target_test = target_test
-
-    def append_results(self, result: Results):
-        if result.features_test is not None:
-            if self.features_test is None:
-                self._features_test = result.features_test.copy()
-            else:
-                self._features_test = np.concatenate(
-                    [self.features_test, result.features_test],
-                    axis=0
-                )
-
-        if result.target_test is not None:
-            if self.target_test is None:
-                self._target_test = result.target_test.copy()
-            else:
-                self._target_test = np.concatenate(
-                    [self.target_test, result.target_test],
-                    axis=0
-                )
-
-        if result._pred_test is not None:
-            if self._pred_test is None:
-                self._pred_test = result._pred_test.copy()
-            else:
-                self._pred_test = np.concatenate(
-                    [self._pred_test, result._pred_test],
-                    axis=0
-                )
-
-        if result._predict_score is not None:
-            if self._predict_score is None:
-                self._predict_score = result._predict_score.copy()
-            else:
-                self._predict_score = np.concatenate(
-                    [self._predict_score, result._predict_score],
-                    axis=0
-                )
-
-        self.model = result.model
-
-        return self
 
     def save_pdf_report(self, filename: str):
         filename = os.path.join(filename,
@@ -263,16 +187,3 @@ class Results:
             zero_division=0,
             output_dict=False,
         )
-
-    def save_model(self, filename: str):
-        filename = os.path.join(filename,
-                                f"model_{self.name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.joblib")
-        dump(self.model, filename)
-
-    def save_results(self, path: str):
-        name = f"{self.name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
-        filename = os.path.join(path, name)
-        create_path(filename)
-        self.save_pdf_report(filename)
-        self.save_model(filename)
-        print(self)

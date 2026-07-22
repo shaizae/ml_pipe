@@ -11,7 +11,7 @@ from sklearn.datasets import load_iris
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 
-from classificetin_files.Classificetion import Classification
+from external_classes.Classificetion import Classification
 from utils.utils import create_shared_numpy
 import numpy as np
 
