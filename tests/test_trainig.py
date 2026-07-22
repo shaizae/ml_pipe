@@ -27,7 +27,7 @@ def test_train_test_split_mc( logistic_model, train_indexes, test_indexes, iris_
     features, target = iris_data_sherd_memory
 
     data = TrainData(model=logistic_model, features=features, target=target, train_index=train_indexes,
-                     test_index=test_indexes, featuresIndex=FEATURE_INDEXES)
+                     test_index=test_indexes, featuresIndex=FEATURE_INDEXES,results_type= ClassificationResults)
 
     result = train_test_split_mc(data)
 
@@ -44,7 +44,7 @@ def test_train_k_folds_mc(iris_data_sherd_memory, logistic_model, folds, expecte
     features, target = iris_data_sherd_memory
 
     data = KFoldsTrainData(model=logistic_model, features=features, target=target, number_of_folds=folds, shuffle=True,
-                           randon_state=RANDOM_STATE, featuresIndex=FEATURE_INDEXES)
+                           randon_state=RANDOM_STATE, featuresIndex=FEATURE_INDEXES,results_type= ClassificationResults)
 
     result = train_k_folds_mc(data)
 

@@ -3,7 +3,7 @@ import pytest
 
 from tests.conftest import DummyModel
 from results.ClassificationResults import ClassificationResults
-from utils.utils import FilteringCriteria, ValidationType
+from utils.utils import FilteringCriteriaClassification, ValidationType
 
 
 def make_results(features_test=None, target_test=None, pred_test=None):
@@ -145,7 +145,7 @@ def test_filter_by_returns_best(classifier):
 
     classifier._results = [r1, r2]
 
-    result = classifier.filter_by(FilteringCriteria.accuracy)
+    result = classifier.filter_by(FilteringCriteriaClassification.accuracy)
 
     assert result == [r2]
 

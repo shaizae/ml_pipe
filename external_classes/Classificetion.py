@@ -1,8 +1,6 @@
 import os
-from itertools import combinations
-from itertools import product
 from multiprocessing.pool import Pool
-from typing import Generator, Any, Iterable
+from typing import Generator, Iterable
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -10,18 +8,20 @@ from sklearn.base import BaseEstimator
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-from external_classes.BaseML import BaseML
-from utils.Fetchers import Fetchers
+from external_classes.BaseML import BaseML,_brut_force, _add_hyper_parameter
 from results.ClassificationResults import ClassificationResults
+from utils.Fetchers import Fetchers
 from utils.Target import Target
 from utils.multiprocess_functions import train_test_split_mc, features_selections, train_k_folds_mc
-from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, SharedMemory, FilteringCriteria, \
+from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, SharedMemory, \
+    FilteringCriteriaClassification, \
     cleanup_shared_memory, KFoldsTrainData
 
 
 class Classification(BaseML):
     _process_limit: int = max(1, os.cpu_count() // 2)
     random_state = None
+
     def __init__(self):
         super().__init__()
         self._results: list[ClassificationResults] = None
@@ -44,7 +44,7 @@ class Classification(BaseML):
         self.targets = Target()
         self.targets.load_new_data(target)
 
-        self._train_data = [TrainData(model) for model in models]
+        self._train_data = [TrainData(model, ClassificationResults) for model in models]
 
     @cleanup_shared_memory
     def train_test_split(self, ratio: float = 0.8):
@@ -107,7 +107,7 @@ class Classification(BaseML):
                 train_data = train_data_class.copy()
                 train_data.set_features_and_targets(X_train, y_train)
                 train_data.set_features_selection(indexes)
-                with_params = self._add_hyper_parameter(train_data)
+                with_params = _add_hyper_parameter(self._hyper_parameter, train_data)
                 for params in with_params:
                     yield params
 
@@ -148,30 +148,6 @@ class Classification(BaseML):
     def results(self):
         return self._results
 
-    def filter_by(self, criteria: FilteringCriteria):
+    def filter_by(self, criteria: FilteringCriteriaClassification):
         max_value = max(getattr(result, criteria.value) for result in self._results)
         return [item for item in self._results if getattr(item, criteria.value) == max_value]
-
-    def set_hyper_parameter_brut_force(self, hyper_parameter: dict[str, list[Any]]):
-        self._hyper_parameter = hyper_parameter
-
-    def _add_hyper_parameter(self, data: TrainData) -> list[TrainData]:
-        train_data = data.copy()
-        model_params = train_data.get_model_params()
-        valid_params = {k: v for k, v in self._hyper_parameter.items() if k in model_params}
-        if not valid_params:
-            return [train_data]
-        keys = list(valid_params.keys())
-        new_train_data = []
-        for values in product(*(valid_params[k] for k in keys)):
-            td = train_data.copy()
-            params = dict(zip(keys, values))
-            td.model.set_params(**params)
-            new_train_data.append(td)
-        return new_train_data
-
-
-def _brut_force(vec: np.ndarray) -> Iterable[np.ndarray]:
-    for i in range(1, len(vec)):
-        for combo in combinations(vec, i):
-            yield combo

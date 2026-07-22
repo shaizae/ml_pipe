@@ -10,6 +10,8 @@ from typing import Tuple, Any
 import numpy as np
 from sklearn.base import BaseEstimator
 
+from results import BaseResults
+
 
 class SharedMemory:
     _shms: dict[str, SharedMemory] = {}
@@ -69,11 +71,13 @@ def features_unpackage(shared_memory: SharedMemory, index: list[int], features_i
 @dataclass(slots=True)
 class TrainData:
     model: Any
+    results_type: BaseResults
     features: SharedMemory = None
     target: SharedMemory = None
     train_index: list[int] = None
     test_index: list[int] = None
     featuresIndex: list[int] = None
+
 
     @property
     def name(self):
@@ -132,11 +136,17 @@ class ValidationType(StrEnum):
     leave_one_out = "leave_one_out"
 
 
-class FilteringCriteria(StrEnum):
+class FilteringCriteriaClassification(StrEnum):
     accuracy = "accuracy"
     f1 = "f1"
     recall = "recall"
     precision = "precision"
+
+class FilteringCriteriaRegression(StrEnum):
+    mae="mae"
+    mse="mse"
+    rmse="rmse"
+
 
 
 def create_path(path: str) -> Path:

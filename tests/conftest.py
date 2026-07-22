@@ -1,19 +1,23 @@
 import os
 import sys
 
+
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import uuid
 
 from utils.Fetchers import Fetchers
 import pandas as pd
 import pytest
-from sklearn.datasets import load_iris
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.datasets import load_iris, make_regression
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.svm import SVC
 
 from external_classes.Classificetion import Classification
 from utils.utils import create_shared_numpy
 import numpy as np
+from sklearn.linear_model import LinearRegression, Ridge
+from Regression import Regression
 
 RANDOM_STATE = 42
 
@@ -44,12 +48,14 @@ def iris_data():
     y = pd.Series(data.target)
     return X, y
 
+
 @pytest.fixture
 def iris_data_sherd_memory():
     data = load_iris()
-    X=create_shared_numpy(data.data, "fetchers")
-    y=create_shared_numpy(data.target, "target")
+    X = create_shared_numpy(data.data, "fetchers")
+    y = create_shared_numpy(data.target, "target")
     return X, y
+
 
 @pytest.fixture
 def classifier(iris_data):
@@ -101,3 +107,19 @@ def train_indexes():
 @pytest.fixture
 def test_indexes():
     return list(range(SPLIT_TRAIN_SIZE, SPLIT_TRAIN_SIZE + SPLIT_TEST_SIZE))
+
+
+@pytest.fixture
+def regression_data():
+    X, y = make_regression(n_samples=100, n_features=5, noise=10, random_state=42, )
+    X = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
+    y = pd.Series(y, name="target")
+    return X, y
+
+
+@pytest.fixture
+def regression_class(regression_data):
+    X, y = regression_data
+    reg = Regression()
+    reg.set(X, y, [LinearRegression(), Ridge(), RandomForestRegressor(n_estimators=10, random_state=42, ), ], )
+    return reg

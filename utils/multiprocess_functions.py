@@ -23,26 +23,26 @@ def train_test_split_mc(train_data: TrainData):
     train_data.fit(features_unpackage(train_data.features, train_data.train_index, train_data.featuresIndex),
                    train_data.target.array[train_data.train_index])
 
-    result = ClassificationResults(train_data.model)
+    result = train_data.results_type(train_data.model)
     result.set_test(features_unpackage(train_data.features, train_data.test_index, train_data.featuresIndex),
                     train_data.target.array[train_data.test_index])
     result.predict()
-    result.validation=ValidationType.train_test_split
+    result.validation = ValidationType.train_test_split
     return result
 
 
 @force_gc
 def train_k_folds_mc(train_data: KFoldsTrainData):
-    kf = KFold(n_splits=train_data.number_of_folds, shuffle=train_data.shuffle,random_state=train_data.randon_state)
+    kf = KFold(n_splits=train_data.number_of_folds, shuffle=train_data.shuffle, random_state=train_data.randon_state)
     final_result: ClassificationResults = None
-    is_loo=False
-    if train_data.number_of_folds ==train_data.target.shape[0]:
+    is_loo = False
+    if train_data.number_of_folds == train_data.target.shape[0]:
         is_loo = True
     for train_index, test_index in kf.split(train_data.features.array):
         fold_data = train_data.copy()
         fold_data.set_indexes(train_index, test_index)
 
-        result = ClassificationResults(
+        result = train_data.results_type(
             fold_data.fit(features_unpackage(fold_data.features, fold_data.train_index, fold_data.featuresIndex),
                           fold_data.target.array[fold_data.train_index]))
         result.set_test(features_unpackage(fold_data.features, fold_data.test_index, fold_data.featuresIndex),
@@ -55,9 +55,9 @@ def train_k_folds_mc(train_data: KFoldsTrainData):
     final_result.predict()
 
     if is_loo:
-        final_result.validation=ValidationType.leave_one_out
+        final_result.validation = ValidationType.leave_one_out
     else:
-        final_result.validation=ValidationType.k_folds
+        final_result.validation = ValidationType.k_folds
     return final_result
 
 
