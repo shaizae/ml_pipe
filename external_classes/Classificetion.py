@@ -1,6 +1,6 @@
 import os
 from multiprocessing.pool import Pool
-from typing import Generator, Iterable
+from typing import Generator, Iterable, Any
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -13,24 +13,20 @@ from results.ClassificationResults import ClassificationResults
 from utils.Fetchers import Fetchers
 from utils.Target import Target
 from utils.multiprocess_functions import train_test_split_mc, features_selections, train_k_folds_mc
-from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, SharedMemory, \
+from utils.utils import create_shared_numpy, FeaturesSelectionsData, SharedMemory, \
     FilteringCriteriaClassification, \
-    cleanup_shared_memory, KFoldsTrainData
+    cleanup_shared_memory
+from utils.train_data_classes import TrainData, KFoldsTrainData
 
 
 class Classification(BaseML):
-    _process_limit: int = max(1, os.cpu_count() // 2)
-    random_state = None
+
 
     def __init__(self):
         super().__init__()
         self._results: list[ClassificationResults] = None
 
-    @staticmethod
-    def process_limit(new_limit: int):
-        if new_limit < 0:
-            raise ValueError('the limit must be greater than 0')
-        Classification._process_limit = min(new_limit, os.cpu_count())
+
 
     def set(self, fetchers: DataFrame, target: np.ndarray | Series, models: list[BaseEstimator]):
         if isinstance(target, Series):
@@ -149,5 +145,8 @@ class Classification(BaseML):
         return self._results
 
     def filter_by(self, criteria: FilteringCriteriaClassification):
-        max_value = max(getattr(result, criteria.value) for result in self._results)
-        return [item for item in self._results if getattr(item, criteria.value) == max_value]
+        if criteria not in FilteringCriteriaClassification:
+            raise ValueError("criteria must be one of {}".format(list(FilteringCriteriaClassification)))
+        return super().filter_by(criteria)
+
+

@@ -6,8 +6,9 @@ from tests.conftest import FEATURE_INDEXES, K_FOLDS, LEAVE_ONE_OUT_FOLDS, RANDOM
     IRIS_FEATURE_COUNT, ALL_FEATURES, iris_data_sherd_memory
 from results.ClassificationResults import ClassificationResults
 from utils.multiprocess_functions import train_test_split_mc, train_k_folds_mc, features_selections
-from utils.utils import TrainData, KFoldsTrainData, FeaturesSelectionsData, ValidationType, features_unpackage, \
+from utils.utils import FeaturesSelectionsData, ValidationType, features_unpackage, \
     cleanup_shared_memory
+from utils.train_data_classes import TrainData, KFoldsTrainData
 
 
 def test_features_unpackage(shared_array):

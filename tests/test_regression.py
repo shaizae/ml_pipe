@@ -2,11 +2,11 @@ import numpy as np
 import pytest
 from sklearn.linear_model import LinearRegression, Ridge
 
-from BaseML import _add_hyper_parameter
+from external_classes.BaseML import _add_hyper_parameter
 from external_classes.Regression import Regression
 from results.RegressionResults import RegressionResults
 from tests.conftest import regression_data, regression_class
-from utils.utils import ValidationType, FilteringCriteriaClassification
+from utils.utils import ValidationType, FilteringCriteriaRegression
 
 
 def test_set_regression(regression_class):
@@ -71,7 +71,7 @@ def test_filter_by_r2(regression_class):
     r1._r2 = 0.5
     r2._r2 = 0.8
     regression_class._results = [r1, r2, ]
-    result = regression_class.filter_by(FilteringCriteriaClassification.r2)
+    result = regression_class.filter_by(FilteringCriteriaRegression.r2)
     assert result == [r2]
 
 
@@ -81,7 +81,7 @@ def test_filter_by_mae(regression_class):
     r1._mae = 0.5
     r2._mae = 0.2
     regression_class._results = [r1, r2, ]
-    result = regression_class.filter_by(FilteringCriteriaClassification.mae)
+    result = regression_class.filter_by(FilteringCriteriaRegression.mae)
     assert result == [r2]
 
 

@@ -7,10 +7,11 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.feature_selection import chi2
 from sklearn.svm import SVC
 
-from BaseML import _add_hyper_parameter
+from external_classes.BaseML import _add_hyper_parameter
 from external_classes.Classificetion import Classification
 from results.ClassificationResults import ClassificationResults
-from utils.utils import create_shared_numpy, KFoldsTrainData, cleanup_shared_memory, TrainData
+from utils.utils import create_shared_numpy, cleanup_shared_memory
+from utils.train_data_classes import TrainData, KFoldsTrainData
 
 
 def test_set_initializes_data(classifier):

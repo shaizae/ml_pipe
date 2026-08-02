@@ -1,8 +1,6 @@
 import os
 import sys
 
-
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import uuid
 
@@ -14,10 +12,11 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.svm import SVC
 
 from external_classes.Classificetion import Classification
-from utils.utils import create_shared_numpy
+from utils.utils import create_shared_numpy, ValidationType
 import numpy as np
 from sklearn.linear_model import LinearRegression, Ridge
-from Regression import Regression
+from external_classes.Regression import Regression
+from results.RegressionResults import RegressionResults
 
 RANDOM_STATE = 42
 
@@ -123,3 +122,13 @@ def regression_class(regression_data):
     reg = Regression()
     reg.set(X, y, [LinearRegression(), Ridge(), RandomForestRegressor(n_estimators=10, random_state=42, ), ], )
     return reg
+
+
+@pytest.fixture
+def regression_result():
+    X, y = make_regression(n_samples=200, n_features=5, noise=5, random_state=42, )
+    model = LinearRegression()
+    model.fit(X[:150], y[:150])
+    result = RegressionResults(model)
+    result.validation = ValidationType.train_test_split
+    return result

@@ -1,13 +1,16 @@
+import os
 from abc import ABC, abstractmethod
 from itertools import combinations, product
 from typing import Any, Iterable
 
 import numpy as np
 
-from utils.utils import TrainData
+from utils.train_data_classes import TrainData
 
 
 class BaseML(ABC):
+    _process_limit: int = max(1, os.cpu_count() // 2)
+    random_state = None
 
     def __init__(self):
         self._features_index: list[list[int]] = None
@@ -32,12 +35,22 @@ class BaseML(ABC):
     def leave_one_out(self):
         ...
 
-    @abstractmethod
-    def filter_by(self, criteria):
-        ...
+    @staticmethod
+    def process_limit(new_limit: int):
+        if new_limit < 1:
+            raise ValueError("limit must be greater than 0")
+        BaseML._process_limit = min(new_limit, os.cpu_count())
 
     def set_hyper_parameters(self, hyper_parameter: dict[str, list[Any]]):
         self._hyper_parameter = hyper_parameter
+
+    @abstractmethod
+    def filter_by(self, criteria):
+        values = [getattr(result, criteria.value) for result in self._results]
+
+        best_value = max(values) if criteria.maximize else min(values)
+
+        return [result for result in self._results if getattr(result, criteria.value) == best_value]
 
 
 def _brut_force(vec: np.ndarray) -> Iterable[np.ndarray]:
@@ -60,4 +73,3 @@ def _add_hyper_parameter(_hyper_parameter, data: TrainData) -> list[TrainData]:
         td.model.set_params(**params)
         new_train_data.append(td)
     return new_train_data
-

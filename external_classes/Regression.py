@@ -9,32 +9,25 @@ from sklearn.base import BaseEstimator
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
+from external_classes.BaseML import BaseML
 from results.RegressionResults import RegressionResults
 from utils.Fetchers import Fetchers
 from utils.Target import Target
 from utils.multiprocess_functions import train_k_folds_mc, train_test_split_mc
-from utils.utils import TrainData, KFoldsTrainData, SharedMemory, FilteringCriteriaClassification, \
+from utils.utils import SharedMemory, FilteringCriteriaClassification, \
     cleanup_shared_memory, \
     create_shared_numpy, FilteringCriteriaRegression
+from utils.train_data_classes import TrainData, KFoldsTrainData
 
 
-class Regression:
+class Regression(BaseML):
     _process_limit = max(1, os.cpu_count() // 2)
     random_state = None
 
     def __init__(self):
-        self._features_index: list[list[int]] = []
-        self._hyper_parameter: dict[str, list[Any]] = {}
+        super().__init__()
         self._results: list[RegressionResults] = None
-        self.fetchers: Fetchers = None
-        self.targets: Target = None
-        self._train_data: list[TrainData] = None
 
-    @staticmethod
-    def process_limit(new_limit: int):
-        if new_limit < 1:
-            raise ValueError("limit must be greater than 0")
-        Regression._process_limit = min(new_limit, os.cpu_count())
 
     def set(self, fetchers: DataFrame, target: np.ndarray | Series, models: list[BaseEstimator], ):
         if isinstance(target, Series):
@@ -124,5 +117,6 @@ class Regression:
         return output
 
     def filter_by(self, criteria: FilteringCriteriaRegression):
-        max_value = max(getattr(result, criteria.value) for result in self._results)
-        return [item for item in self._results if getattr(item, criteria.value) == max_value]
+        if criteria not in FilteringCriteriaRegression:
+            raise ValueError("criteria must be one of {}".format(list(FilteringCriteriaRegression)))
+        return super().filter_by(criteria)

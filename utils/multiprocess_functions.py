@@ -5,7 +5,8 @@ from sklearn.feature_selection import SelectKBest
 from sklearn.model_selection import KFold
 
 from results.ClassificationResults import ClassificationResults
-from utils.utils import TrainData, KFoldsTrainData, FeaturesSelectionsData, SharedMemory, force_gc, ValidationType
+from utils.utils import FeaturesSelectionsData, SharedMemory, force_gc, ValidationType
+from utils.train_data_classes import TrainData, KFoldsTrainData
 
 warnings.filterwarnings(
     "ignore",
