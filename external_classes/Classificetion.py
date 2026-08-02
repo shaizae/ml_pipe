@@ -1,8 +1,6 @@
 import os
-from itertools import combinations
-from itertools import product
 from multiprocessing.pool import Pool
-from typing import Generator, Any, Iterable
+from typing import Generator, Iterable, Any
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -10,31 +8,25 @@ from sklearn.base import BaseEstimator
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
+from external_classes.BaseML import BaseML,_brut_force, _add_hyper_parameter
+from results.ClassificationResults import ClassificationResults
 from utils.Fetchers import Fetchers
-from utils.Results import Results
 from utils.Target import Target
 from utils.multiprocess_functions import train_test_split_mc, features_selections, train_k_folds_mc
-from utils.utils import create_shared_numpy, TrainData, FeaturesSelectionsData, SharedMemory, FilteringCriteria, \
-    cleanup_shared_memory, KFoldsTrainData
+from utils.utils import create_shared_numpy, FeaturesSelectionsData, SharedMemory, \
+    FilteringCriteriaClassification, \
+    cleanup_shared_memory
+from utils.train_data_classes import TrainData, KFoldsTrainData
 
 
-class Classification:
-    _process_limit: int = max(1, os.cpu_count() // 2)
-    random_state = None
+class Classification(BaseML):
+
 
     def __init__(self):
-        self._features_index: list[list[int]] = None
-        self._hyper_parameter: dict[str, list[Any]] = {}
-        self._results: list[Results] = None
-        self.fetchers: Fetchers = None
-        self.targets: Target = None
-        self._train_data: list[TrainData] = None
+        super().__init__()
+        self._results: list[ClassificationResults] = None
 
-    @staticmethod
-    def process_limit(new_limit: int):
-        if new_limit < 0:
-            raise ValueError('the limit must be greater than 0')
-        Classification._process_limit = min(new_limit, os.cpu_count())
+
 
     def set(self, fetchers: DataFrame, target: np.ndarray | Series, models: list[BaseEstimator]):
         if isinstance(target, Series):
@@ -48,7 +40,7 @@ class Classification:
         self.targets = Target()
         self.targets.load_new_data(target)
 
-        self._train_data = [TrainData(model) for model in models]
+        self._train_data = [TrainData(model, ClassificationResults) for model in models]
 
     @cleanup_shared_memory
     def train_test_split(self, ratio: float = 0.8):
@@ -111,7 +103,7 @@ class Classification:
                 train_data = train_data_class.copy()
                 train_data.set_features_and_targets(X_train, y_train)
                 train_data.set_features_selection(indexes)
-                with_params = self._add_hyper_parameter(train_data)
+                with_params = _add_hyper_parameter(self._hyper_parameter, train_data)
                 for params in with_params:
                     yield params
 
@@ -152,30 +144,9 @@ class Classification:
     def results(self):
         return self._results
 
-    def filter_by(self, criteria: FilteringCriteria):
-        max_value = max(getattr(result, criteria.value) for result in self._results)
-        return [item for item in self._results if getattr(item, criteria.value) == max_value]
-
-    def set_hyper_parameter_brut_force(self, hyper_parameter: dict[str, list[Any]]):
-        self._hyper_parameter = hyper_parameter
-
-    def _add_hyper_parameter(self, data: TrainData) -> list[TrainData]:
-        train_data = data.copy()
-        model_params = train_data.get_model_params()
-        valid_params = {k: v for k, v in self._hyper_parameter.items() if k in model_params}
-        if not valid_params:
-            return [train_data]
-        keys = list(valid_params.keys())
-        new_train_data = []
-        for values in product(*(valid_params[k] for k in keys)):
-            td = train_data.copy()
-            params = dict(zip(keys, values))
-            td.model.set_params(**params)
-            new_train_data.append(td)
-        return new_train_data
+    def filter_by(self, criteria: FilteringCriteriaClassification):
+        if criteria not in FilteringCriteriaClassification:
+            raise ValueError("criteria must be one of {}".format(list(FilteringCriteriaClassification)))
+        return super().filter_by(criteria)
 
 
-def _brut_force(vec: np.ndarray) -> Iterable[np.ndarray]:
-    for i in range(1, len(vec)):
-        for combo in combinations(vec, i):
-            yield combo

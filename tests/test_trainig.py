@@ -4,10 +4,11 @@ from sklearn.feature_selection import f_classif
 
 from tests.conftest import FEATURE_INDEXES, K_FOLDS, LEAVE_ONE_OUT_FOLDS, RANDOM_STATE, IRIS_SAMPLES, SELECTED_FEATURES, \
     IRIS_FEATURE_COUNT, ALL_FEATURES, iris_data_sherd_memory
-from utils.Results import Results
+from results.ClassificationResults import ClassificationResults
 from utils.multiprocess_functions import train_test_split_mc, train_k_folds_mc, features_selections
-from utils.utils import TrainData, KFoldsTrainData, FeaturesSelectionsData, ValidationType, features_unpackage, \
+from utils.utils import FeaturesSelectionsData, ValidationType, features_unpackage, \
     cleanup_shared_memory
+from utils.train_data_classes import TrainData, KFoldsTrainData
 
 
 def test_features_unpackage(shared_array):
@@ -27,11 +28,11 @@ def test_train_test_split_mc( logistic_model, train_indexes, test_indexes, iris_
     features, target = iris_data_sherd_memory
 
     data = TrainData(model=logistic_model, features=features, target=target, train_index=train_indexes,
-                     test_index=test_indexes, featuresIndex=FEATURE_INDEXES)
+                     test_index=test_indexes, featuresIndex=FEATURE_INDEXES,results_type= ClassificationResults)
 
     result = train_test_split_mc(data)
 
-    assert isinstance(result, Results)
+    assert isinstance(result, ClassificationResults)
 
     assert result.validation == ValidationType.train_test_split
 
@@ -44,11 +45,11 @@ def test_train_k_folds_mc(iris_data_sherd_memory, logistic_model, folds, expecte
     features, target = iris_data_sherd_memory
 
     data = KFoldsTrainData(model=logistic_model, features=features, target=target, number_of_folds=folds, shuffle=True,
-                           randon_state=RANDOM_STATE, featuresIndex=FEATURE_INDEXES)
+                           randon_state=RANDOM_STATE, featuresIndex=FEATURE_INDEXES,results_type= ClassificationResults)
 
     result = train_k_folds_mc(data)
 
-    assert isinstance(result, Results)
+    assert isinstance(result, ClassificationResults)
 
     assert result.validation == expected_validation
 

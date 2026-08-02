@@ -7,8 +7,11 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.feature_selection import chi2
 from sklearn.svm import SVC
 
-from classificetin_files.Classificetion import Classification
-from utils.utils import create_shared_numpy, KFoldsTrainData, cleanup_shared_memory, TrainData
+from external_classes.BaseML import _add_hyper_parameter
+from external_classes.Classificetion import Classification
+from results.ClassificationResults import ClassificationResults
+from utils.utils import create_shared_numpy, cleanup_shared_memory
+from utils.train_data_classes import TrainData, KFoldsTrainData
 
 
 def test_set_initializes_data(classifier):
@@ -152,7 +155,7 @@ def test_k_fold_generator(classifier, iris_data):
 
 def test_train_test_split_exception(classifier):
     with patch(
-            "classificetin_files.Classificetion.Pool",
+            "external_classes.Classificetion.Pool",
             side_effect=RuntimeError("boom")
     ):
         with pytest.raises(RuntimeError):
@@ -160,13 +163,13 @@ def test_train_test_split_exception(classifier):
 
 
 def test_k_folds_exception(classifier):
-    with patch("classificetin_files.Classificetion.Pool", side_effect=RuntimeError("boom")):
+    with patch("external_classes.Classificetion.Pool", side_effect=RuntimeError("boom")):
         with pytest.raises(RuntimeError, match="boom"):
             classifier.k_folds(3)
 
 
 def test_fetcher_selection_exception(classifier):
-    with patch("classificetin_files.Classificetion.Pool", side_effect=RuntimeError("boom"), ):
+    with patch("external_classes.Classificetion.Pool", side_effect=RuntimeError("boom"), ):
         with pytest.raises(RuntimeError, match="boom"):
             classifier.fetcher_selection(algorithm=chi2, number_of_features=[1, 2], )
 
@@ -177,18 +180,18 @@ def test_k_folds_no_shuffle(classifier):
 
 
 def test_add_hyper_parameter_create_combinations(classifier):
-    train_data = TrainData(model=RandomForestClassifier())
+    train_data = TrainData(model=RandomForestClassifier(),results_type= ClassificationResults)
     classifier._hyper_parameter = {"n_estimators": [10, 20], "max_depth": [2, 4]}
-    result = classifier._add_hyper_parameter(train_data)
+    result = _add_hyper_parameter(classifier._hyper_parameter, train_data)
     assert len(result) == 4
     params = [(td.model.get_params()["n_estimators"], td.model.get_params()["max_depth"]) for td in result]
     assert set(params) == {(10, 2), (10, 4), (20, 2), (20, 4)}
 
 
 def test_add_hyper_parameter_ignore_invalid_parameters(classifier):
-    train_data = TrainData(model=SVC())
+    train_data = TrainData(model=SVC(),results_type= ClassificationResults)
     classifier._hyper_parameter = {"C": [1, 10], "not_a_parameter": [100, 200]}
-    result = classifier._add_hyper_parameter(train_data)
+    result = _add_hyper_parameter(classifier._hyper_parameter, train_data)
     assert len(result) == 2
     for td in result:
         assert td.model.get_params()["C"] in [1, 10]
@@ -196,9 +199,9 @@ def test_add_hyper_parameter_ignore_invalid_parameters(classifier):
 
 
 def test_add_hyper_parameter_no_valid_parameters(classifier):
-    train_data = TrainData(model=SVC())
+    train_data = TrainData(model=SVC(),results_type= ClassificationResults)
     classifier._hyper_parameter = {"fake_parameter": [1, 2, 3]}
-    result = classifier._add_hyper_parameter(train_data)
+    result = _add_hyper_parameter(classifier._hyper_parameter, train_data)
     assert len(result) == 1
     returned = result[0]
     assert returned is not train_data
@@ -207,9 +210,9 @@ def test_add_hyper_parameter_no_valid_parameters(classifier):
 
 
 def test_add_hyper_parameter_does_not_change_original_model(classifier):
-    train_data = TrainData(model=RandomForestClassifier(n_estimators=50))
+    train_data = TrainData(model=RandomForestClassifier(n_estimators=50),results_type= ClassificationResults)
     classifier._hyper_parameter = {"n_estimators": [100]}
-    result = classifier._add_hyper_parameter(train_data)
+    result = _add_hyper_parameter(classifier._hyper_parameter, train_data)
     assert len(result) == 1
     assert result[0].model.get_params()["n_estimators"] == 100
     assert train_data.model.get_params()["n_estimators"] == 50
@@ -217,9 +220,9 @@ def test_add_hyper_parameter_does_not_change_original_model(classifier):
 
 def test_add_hyper_parameter_multiple_models_shared_parameters(classifier):
     train_data_list = [
-        TrainData(model=RandomForestClassifier()),
-        TrainData(model=AdaBoostClassifier()),
-        TrainData(model=SVC())
+        TrainData(model=RandomForestClassifier(),results_type= ClassificationResults),
+        TrainData(model=AdaBoostClassifier(),results_type= ClassificationResults),
+        TrainData(model=SVC(),results_type= ClassificationResults)
     ]
 
     classifier._hyper_parameter = {
@@ -231,7 +234,7 @@ def test_add_hyper_parameter_multiple_models_shared_parameters(classifier):
 
     for train_data in train_data_list:
         results.extend(
-            classifier._add_hyper_parameter(train_data)
+            _add_hyper_parameter(classifier._hyper_parameter, train_data)
         )
 
     # RF -> 2
